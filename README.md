@@ -76,7 +76,7 @@ Whenever a function like ```getByIds()``` or ```getByIds()``` returns null, the 
 
 
 DOCUMENT
-
+---
 A document is an associative array containing a key/value store of an entity in Communibase.
 
 E.g.
@@ -94,7 +94,7 @@ array(
 ```
 
 RESPONSEDATA
-
+---
 Response data is an associative array in the following format:
 
 ```
