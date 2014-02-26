@@ -1,7 +1,7 @@
 A general-purpose Communibase client for PHP projects, compatible with composer packaging-projects.
 
 A connector may be constructed to do REST-calls on the Communibase API.  The behaviour of this class should always Mimic
-the node.js-version, available at [Github](https://github.com/kingsquare/communibase-connector-php)
+the node.js-version, available at [Github](https://github.com/kingsquare/communibaseConnector)
 
 Usage
 =====
