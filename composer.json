@@ -1,0 +1,20 @@
+{
+	"name": "kingsquare/communibase-connector-php",
+	"description": "This is the Communibase connector for PHP.",
+	"keywords": ["communibase", "connector"],
+	"type": "library",
+	"license": "MIT",
+	"authors": [
+		{ "name": "Tim de Koning", "email": "tim@kingsquare.nl" },
+		{ "name": "Robin Speekenbrink", "email": "robin@kingsquare.nl" }
+	],
+	"require": {
+		"php": ">=5.3",
+		"ext-curl": "*"
+	},
+	"autoload": {
+		"psr-0": {
+			"Communibase": "src/"
+		}
+	}
+}
