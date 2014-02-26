@@ -1,3 +1,7 @@
+[![Scrutinizer Quality Score](https://scrutinizer-ci.com/g/kingsquare/communibase-connector-php/badges/quality-score.png?s=94ea144a5b63afdb4ff9b99991f5ca830ba59d37)](https://scrutinizer-ci.com/g/kingsquare/communibase-connector-php/)
+[![Latest Stable Version](https://poser.pugx.org/kingsquare/communibase-connector-php/v/stable.png)](https://packagist.org/packages/kingsquare/communibase-connector-php)
+[![License](https://poser.pugx.org/kingsquare/communibase-connector-php/license.png)](https://packagist.org/packages/kingsquare/communibase-connector-php)
+
 A general-purpose Communibase client for PHP projects, compatible with composer packaging-projects.
 
 A connector may be constructed to do REST-calls on the Communibase API.  The behaviour of this class should always Mimic
@@ -12,13 +16,7 @@ Install composer, Initialize it (```php composer.phar init```) and add the conne
 {
 	"require": {
 		"kingsquare/communibase-connector-php": "*"
-	},
-	"repositories": [
-		{
-			"type": "vcs",
-			"url":  "git@github.com:kingsquare/communibase-connector-php"
-		}
-	]
+	}
 }
 
 ```
@@ -41,7 +39,7 @@ API
 
 "objectType" should be the Communibase Entitytype, e.g. "Person", "Invoice", etc.
 
-"selectors" may be provided [MongoDb style](http://docs.mongodb.org/manual/reference/method/db.collection.find/#db.collection.find).
+"selectors" may be provided [MongoDb style](http://docs.mongodb.org/manual/reference/method/db.collection.find/#db.collection.find) as array-definitions.
 
 "params" is a key value store for e.g. fields, limit, page and/or sort . See [API docs](https://api.communibase.nl/docs/) for more details.
 
@@ -76,7 +74,7 @@ Whenever a function like ```getByIds()``` or ```getByIds()``` returns null, the 
 
 
 DOCUMENT
----
+--
 A document is an associative array containing a key/value store of an entity in Communibase.
 
 E.g.
@@ -94,7 +92,7 @@ array(
 ```
 
 RESPONSEDATA
----
+--
 Response data is an associative array in the following format:
 
 ```
