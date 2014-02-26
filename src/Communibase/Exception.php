@@ -24,7 +24,7 @@ class Exception extends \Exception {
 	/**
 	 * Overloaded to allow specific errors given by the API back to the handler
 	 * @inherit
-	 * @param null $message
+	 * @param null|string $message
 	 * @param int $code
 	 * @param Exception $previous
 	 * @param array $errors

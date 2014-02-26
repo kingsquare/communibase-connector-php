@@ -134,12 +134,13 @@ class Connector {
 	 * @return array resultData
 	 */
 	function getId($objectType, $selector = array()) {
-		return array_shift($this->getIds($objectType, $selector, array('limit' => 1)));
+		$ids = $this->getIds($objectType, $selector, array('limit' => 1));
+		return array_shift($ids);
 	}
 
 	/**
 	 * @param string $entityType
-	 * @param string $querySelector
+	 * @param array $querySelector
 	 * @param array $params (optional)
 	 * @return array
 	 */
