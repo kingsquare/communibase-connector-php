@@ -76,7 +76,7 @@ class Connector {
 				return $subDocument;
 			}
 		}
-		throw new \Communibase\Exception('Could not find the referred object');
+		throw new Exception('Could not find the referred object');
 	}
 
 	/**
@@ -210,12 +210,12 @@ class Connector {
 	 *
 	 * @param string $url
 	 * @param array $params (optional)
-	 * @throws \Communibase\Exception
+	 * @throws Exception
 	 * @return resource
 	 */
 	private function setupCurlHandle($url, $params = array()) {
 		if (empty($this->apiKey)) {
-			throw new \Communibase\Exception('Use of connector not possible without API key', Exception::INVALID_API_KEY);
+			throw new Exception('Use of connector not possible without API key', Exception::INVALID_API_KEY);
 		}
 		$params['api_key'] = $this->apiKey;
 		$ch = curl_init($this->serviceUrl . $url . '?' . http_build_query($params));
@@ -231,7 +231,7 @@ class Connector {
 	 *
 	 * @param resource $ch - Curl handle
 	 * @param bool $expectResponseStatus200 - throw an error when the response status !== 200
-	 * @throws \Communibase\Exception
+	 * @throws Exception
 	 * @return array i.e. [success => true|false, [errors => ['message' => 'this is broken', ..]]]
 	 */
 	private function getResult($ch, $expectResponseStatus200 = true) {
@@ -240,7 +240,7 @@ class Connector {
 			$responseData = curl_getinfo($ch);
 			if ($responseData['http_code'] !== 200) {
 				$response = json_decode($response, true);
-				throw new \Communibase\Exception($response['message'],
+				throw new Exception($response['message'],
 						$response['code'],
 						null,
 						(($_=& $response['errors']) ?: array()));
@@ -249,12 +249,12 @@ class Connector {
 		curl_close($ch);
 
 		if ($response === false) {
-			throw new \Communibase\Exception('Curl failed. ' . PHP_EOL . curl_error($ch));
+			throw new Exception('Curl failed. ' . PHP_EOL . curl_error($ch));
 		}
 
 		$result = json_decode($response, true);
 		if (!is_array($result)) {
-			throw new \Communibase\Exception('Communibase failed. ' . PHP_EOL . $response);
+			throw new Exception('Communibase failed. ' . PHP_EOL . $response);
 		}
 		return $result;
 	}
@@ -265,12 +265,12 @@ class Connector {
 	 * NOTE: for meta-data like filesize and mimetype, one can use the getById()-method.
 	 *
 	 * @param string $objectId mongo ObjectID string for the file
-	 * @throws \Communibase\Exception
+	 * @throws Exception
 	 * @return string Binary contents of the file.
 	 */
 	public function getBinary($objectId) {
 		if (empty($this->apiKey)) {
-			throw new \Communibase\Exception('Use of connector not possible without API key', Exception::INVALID_API_KEY);
+			throw new Exception('Use of connector not possible without API key', Exception::INVALID_API_KEY);
 		}
 		return file_get_contents($this->serviceUrl . 'File.json/binary/' . $objectId . '?api_key=' . $this->apiKey);
 	}
