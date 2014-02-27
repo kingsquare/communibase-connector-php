@@ -49,9 +49,9 @@ $cbc->search($entityType, $selector, $params): entity[];
 
 $cbc->getAll($entityType, $params): entity[];
 
-$cbc->getById($entityType, $objectId, $params): entity;
+$cbc->getById($entityType, $id, $params): entity;
 
-$cbc->getByIds($entityType, $objectIds, $params): entity[];
+$cbc->getByIds($entityType, $ids, $params): entity[];
 
 $cbc->getId($entityType, $selector): string;
 
@@ -63,12 +63,12 @@ $cbc->getTemplate($entityType): array;
 
 $cbc->update($entityType, $properties): responseData;
 
-$cbc->destroy($entityType, $objectId): responseData;
+$cbc->destroy($entityType, $id): responseData;
 
-$cbc->generateId(): string - Generate a new, fresh MongoDB object ID
+$cbc->generateId(): string - Generate a new, fresh Communibase ID
 
 //Use for Files only to get a string with the binary contents
-$cbc->getBinary(objectId): string;
+$cbc->getBinary(id): string;
 
 ```
 
