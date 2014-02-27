@@ -144,7 +144,7 @@ class Connector {
 	 */
 	function getId($entityType, $selector = array()) {
 		$params = array('limit' => 1);
-		$ids = $this->getIds($entityType, $selector, $params);
+		$ids = (array) $this->getIds($entityType, $selector, $params);
 		return array_shift($ids);
 	}
 
