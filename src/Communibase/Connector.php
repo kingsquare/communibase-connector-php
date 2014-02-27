@@ -50,7 +50,7 @@ class Connector {
 				'limit' => 1,
 		);
 		$definition = $this->search('EntityType', array('title' => $entityType), $params);
-		return array_fill_keys(array('_id') + array_column($definition[0]['attributes'], 'title'), '');
+		return array_fill_keys(array_merge(array('_id'), array_column($definition[0]['attributes'], 'title')), '');
 	}
 
 	/**
