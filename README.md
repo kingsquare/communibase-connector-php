@@ -37,7 +37,7 @@ print_r($tims);
 API
 ---
 
-"objectType" should be the Communibase Entitytype, e.g. "Person", "Invoice", etc.
+"entityType" should be the Communibase Entitytype, e.g. "Person", "Invoice", etc.
 
 "selectors" may be provided [MongoDb style](http://docs.mongodb.org/manual/reference/method/db.collection.find/#db.collection.find) as array-definitions.
 
@@ -45,23 +45,25 @@ API
 
 ```
 
-$cbc->getById($objectType, $objectId, $params): document;
+$cbc->search($entityType, $selector, $params): entity[];
 
-$cbc->getByIds($objectType, $objectIds, $params): document[];
+$cbc->getAll($entityType, $params): entity[];
 
-$cbc->getAll($objectType, $params): document[];
+$cbc->getById($entityType, $objectId, $params): entity;
 
-$cbc->getId($objectType, $selector): string;
+$cbc->getByIds($entityType, $objectIds, $params): entity[];
 
-$cbc->getByRef($ref[, $parentDocument]): document
+$cbc->getId($entityType, $selector): string;
 
-$cbc->getIds($objectType, $selector, $params): null|string[];
+$cbc->getIds($entityType, $selector, $params): null|string[];
 
-$cbc->search($objectType, $selector, $params): null|document[];
+$cbc->getByRef($ref[, $parent]): entity
 
-$cbc->update($objectType, $document): responseData;
+$cbc->getTemplate($entityType): array;
 
-$cbc->destroy($objectType, $objectId): responseData;
+$cbc->update($entityType, $properties): responseData;
+
+$cbc->destroy($entityType, $objectId): responseData;
 
 $cbc->generateId(): string - Generate a new, fresh MongoDB object ID
 
@@ -70,12 +72,12 @@ $cbc->getBinary(objectId): string;
 
 ```
 
-Whenever a function like ```getByIds()``` or ```getByIds()``` returns null, the property cbc->lastError should be available containing an error message
+Whenever a function like ```getByIds()``` or ```getByIds()``` returns null, the property ```cbc->lastError``` should be available containing an error message
 
 
-DOCUMENT
+Entity
 --
-A document is an associative array containing a key/value store of an entity in Communibase.
+An entity is an associative array containing a key/value store of data in Communibase.
 
 E.g.
 
@@ -91,7 +93,7 @@ array(
 )
 ```
 
-RESPONSEDATA
+ResponseData
 --
 Response data is an associative array in the following format:
 

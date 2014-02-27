@@ -10,7 +10,8 @@
 	],
 	"require": {
 		"php": ">=5.3",
-		"ext-curl": "*"
+		"ext-curl": "*",
+		"rhumsaa/array_column": "~1.1"
 	},
 	"autoload": {
 		"psr-0": {

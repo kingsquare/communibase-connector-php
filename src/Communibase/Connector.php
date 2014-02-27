@@ -39,102 +39,112 @@ class Connector {
 	}
 
 	/**
-	 * Get a single object by its id
-	 *
-	 * @param string $objectType
-	 * @param string $objectId
-	 * @param array $params (optional)
-	 * @return array document
+	 * Returns an array that has all the fields according to the definition in Communibase.
+	 * @param string $entityType
+	 * @return array
+	 * @throws Exception
 	 */
-	function getById($objectType, $objectId, $params = array()) {
-		$ch = $this->setupCurlHandle($objectType . '.json/crud/' . $objectId, $params);
+	function getTemplate($entityType) {
+		$params = array(
+				'fields' => 'attributes.title',
+				'limit' => 1,
+		);
+		$definition = $this->search('EntityType', array('title' => $entityType), $params);
+		return array_fill_keys(array('_id') + array_column($definition[0]['attributes'], 'title'), '');
+	}
+
+	/**
+	 * Get a single Entity by its id
+	 *
+	 * @param string $entityType
+	 * @param string $id
+	 * @param array $params (optional)
+	 * @return array entity
+	 */
+	function getById($entityType, $id, $params = array()) {
+		$ch = $this->setupCurlHandle($entityType . '.json/crud/' . $id, $params);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
 		return $this->getResult($ch);
 	}
 
 	/**
-	 * Get a single object by a ref-string
+	 * Get a single Entity by a ref-string
 	 *
 	 * @param string $ref
-	 * @param array $parentDocument (optional)
+	 * @param array $parentEntity (optional)
 	 * @throws \Communibase\Exception
 	 *
-	 * @return array the referred object data
+	 * @return array the referred Entity data
 	 */
-	function getByRef($ref, $parentDocument = array()) {
+	function getByRef($ref, $parentEntity = array()) {
 		$refParts = explode('.', $ref);
 		if ($refParts[0] !== 'parent') {
 			$entityParts = explode('|', $refParts[0]);
-			$parentDocument = $this->getById($entityParts[0], $entityParts[1]);
+			$parentEntity = $this->getById($entityParts[0], $entityParts[1]);
 		}
 		if (empty($refParts[1])) {
-			return $parentDocument;
+			return $parentEntity;
 		}
 		$propertyParts = explode('|', $refParts[1]);
-		foreach($parentDocument[$propertyParts[0]] as $subDocument) {
-			if ($subDocument['_id'] === $propertyParts[1]) {
-				return $subDocument;
+		foreach ($parentEntity[$propertyParts[0]] as $subEntity) {
+			if ($subEntity['_id'] === $propertyParts[1]) {
+				return $subEntity;
 			}
 		}
-		throw new Exception('Could not find the referred object');
+		throw new Exception('Could not find the referred Entity');
 	}
 
 	/**
-	 * Get an array of objects by their ids
+	 * Get an array of entities by their ids
 	 *
-	 * @param string $objectType
-	 * @param array $objectIds
+	 * @param string $entityType
+	 * @param array $ids
 	 * @param array $params (optional)
-	 * @return array documents
+	 * @return array entities
 	 */
-	function getByIds($objectType, $objectIds, $params = array()) {
-		if (empty($objectIds)) {
+	function getByIds($entityType, $ids, $params = array()) {
+		if (empty($ids)) {
 			return array();
 		}
-		return $this->search($objectType, array('_id' => array('$in' => $objectIds)), $params);
+		return $this->search($entityType, array('_id' => array('$in' => $ids)), $params);
 	}
 
 	/**
-	 * Get all objects of a certain type
+	 * Get all entities of a certain type
 	 *
-	 * @param string $objectType
+	 * @param string $entityType
 	 * @param array $params (optional)
 	 * @return array|null
 	 */
-	function getAll($objectType, $params = array()) {
-		$ch = $this->setupCurlHandle($objectType . '.json/crud/', $params);
+	function getAll($entityType, $params = array()) {
+		$ch = $this->setupCurlHandle($entityType . '.json/crud/', $params);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
 		return $this->getResult($ch);
 	}
 
 	/**
-	 * Get result objectIds of a certain search
+	 * Get result entityIds of a certain search
 	 *
-	 * @param string $objectType
+	 * @param string $entityType
 	 * @param array $selector (optional)
 	 * @param array $params (optional)
 	 * @return array
 	 */
-	function getIds($objectType, $selector = array(), $params = array()) {
+	function getIds($entityType, $selector = array(), $params = array()) {
 		$params['fields'] = '_id';
-		$objectIds = array_map(
-			function ($object) {
-				return $object['_id'];
-			},
-			$this->search($objectType, $selector, $params)
-		);
-		return $objectIds;
+		return array_column($this->search($entityType, $selector, $params), '_id');
 	}
 
 	/**
-	 * Get the id of an object based on a search
+	 * Get the id of an entity based on a search
 	 *
-	 * @param string $objectType i.e. Person
+	 * @param string $entityType i.e. Person
 	 * @param array $selector (optional) i.e. ['firstName' => 'Henk']
 	 * @return array resultData
 	 */
-	function getId($objectType, $selector = array()) {
-		$ids = $this->getIds($objectType, $selector, array('limit' => 1));
+	function getId($entityType, $selector = array()) {
+		$params = array('limit' => 1);
+		$ids = $this->getIds($entityType, $selector, $params);
 		return array_shift($ids);
 	}
 
@@ -153,15 +163,15 @@ class Connector {
 	}
 
 	/**
-	 * This will save a document in Communibase. When a _id-field is found, this document will be updated
+	 * This will save an entity in Communibase. When a _id-field is found, this entity will be updated
 	 *
-	 * @param string $objectType
-	 * @param array $properties - the to-be-saved object data
+	 * @param string $entityType
+	 * @param array $properties - the to-be-saved entity data
 	 * @returns array resultData
 	 */
-	function update($objectType, $properties) {
+	function update($entityType, $properties) {
 		$isNew = empty($properties['_id']);
-		$ch = $this->setupCurlHandle($objectType . '.json/crud/' . ($isNew ? '' : $properties['_id']));
+		$ch = $this->setupCurlHandle($entityType . '.json/crud/' . ($isNew ? '' : $properties['_id']));
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, ($isNew ? 'POST' : 'PUT'));
 		curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($properties));
 		return $this->getResult($ch);
@@ -170,24 +180,25 @@ class Connector {
 	/**
 	 * Delete something from Communibase
 	 *
-	 * @param string $objectType
-	 * @param string $objectId
+	 * @param string $entityType
+	 * @param string $id
 	 * @returns array resultData
 	 */
-	function destroy($objectType, $objectId) {
-		$ch = $this->setupCurlHandle($objectType . '.json/crud/' . $objectId);
+	function destroy($entityType, $id) {
+		$ch = $this->setupCurlHandle($entityType . '.json/crud/' . $id);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
 		return $this->getResult($ch);
 	}
 
 
 	/**
-	 * Generate a MongoDB compatible ID, that consist of :
+	 * Generate a Communibase compatible ID, that consist of:
 	 *
 	 * a 4-byte timestamp,
 	 * a 3-byte machine identifier,
 	 * a 2-byte process id, and
 	 * a 3-byte counter, starting with a random value.
+	 *
 	 */
 	public function generateId( ) {
 		static $inc = 0;
@@ -264,14 +275,14 @@ class Connector {
 	 *
 	 * NOTE: for meta-data like filesize and mimetype, one can use the getById()-method.
 	 *
-	 * @param string $objectId mongo ObjectID string for the file
+	 * @param string $id id string for the file-entity
 	 * @throws Exception
 	 * @return string Binary contents of the file.
 	 */
-	public function getBinary($objectId) {
+	public function getBinary($id) {
 		if (empty($this->apiKey)) {
 			throw new Exception('Use of connector not possible without API key', Exception::INVALID_API_KEY);
 		}
-		return file_get_contents($this->serviceUrl . 'File.json/binary/' . $objectId . '?api_key=' . $this->apiKey);
+		return file_get_contents($this->serviceUrl . 'File.json/binary/' . $id . '?api_key=' . $this->apiKey);
 	}
 }
