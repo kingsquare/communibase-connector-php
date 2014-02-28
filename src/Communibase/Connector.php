@@ -30,7 +30,7 @@ class Connector {
 	private $apiKey;
 
 	/**
-	 * @param $apiKey $apiKey The API key for Communibase
+	 * @param string $apiKey The API key for Communibase
 	 * @param string $serviceUrl
 	 */
 	function __construct($apiKey, $serviceUrl = self::SERVICE_PRODUCTION_URL) {
