@@ -10,18 +10,15 @@ the node.js-version, available at [Github](https://github.com/kingsquare/communi
 Usage
 =====
 
-Install composer, Initialize it (```php composer.phar init```) and add the connector as follows:
-
+The easiest way to install the connector is to use [Composer](https://getcomposer.org/) and add the following to your project's composer.json file:
 ```
 {
-	"require": {
-		"kingsquare/communibase-connector-php": "*"
-	}
+    "require": {
+        "kingsquare/communibase-connector-php": "~1"
+    }
 }
-
 ```
-Now install the package using ``` php composer.phar install ```
-
+Now you should be able to install the package by updating your composer environment ```composer install```
 The connector is available and usable as follows:
 
 ```
@@ -29,15 +26,15 @@ require_once __DIR__ . '/../vendor/autoload.php'; // Autoload files using Compos
 use Communibase\Connector;
 
 $cb = new Connector('<your api key here>');
-$tims = $db->search('Person', array('firstName' => 'Tim'), array('limit' => 5));
-print_r($tims);
+$peopleNamedTim = $db->search('Person', array('firstName' => 'Tim'), array('limit' => 5));
+print_r($peopleNamedTim);
 ```
 
 
 API
 ---
 
-"entityType" should be the Communibase Entitytype, e.g. "Person", "Invoice", etc.
+"entityType" should be the Communibase Entitytype, e.g. "Person", "Invoice", etc. To see all the entity types your API key allows, see the [API docs](https://api.communibase.nl/docs/) and insert your API key there.
 
 "selectors" may be provided [MongoDb style](http://docs.mongodb.org/manual/reference/method/db.collection.find/#db.collection.find) as array-definitions.
 
@@ -60,6 +57,8 @@ $cbc->getIds($entityType, $selector, $params): null|string[];
 $cbc->getByRef($ref[, $parent]): entity
 
 $cbc->getTemplate($entityType): array;
+
+$cbc->getHistory($entityType, $id): array;
 
 $cbc->update($entityType, $properties): responseData;
 

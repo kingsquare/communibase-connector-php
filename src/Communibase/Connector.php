@@ -44,7 +44,7 @@ class Connector {
 	 * @return array
 	 * @throws Exception
 	 */
-	function getTemplate($entityType) {
+	public function getTemplate($entityType) {
 		$params = array(
 				'fields' => 'attributes.title',
 				'limit' => 1,
@@ -61,7 +61,7 @@ class Connector {
 	 * @param array $params (optional)
 	 * @return array entity
 	 */
-	function getById($entityType, $id, $params = array()) {
+	public function getById($entityType, $id, $params = array()) {
 		$ch = $this->setupCurlHandle($entityType . '.json/crud/' . $id, $params);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
 		return $this->getResult($ch);
@@ -76,7 +76,7 @@ class Connector {
 	 *
 	 * @return array the referred Entity data
 	 */
-	function getByRef($ref, $parentEntity = array()) {
+	public function getByRef($ref, $parentEntity = array()) {
 		$refParts = explode('.', $ref);
 		if ($refParts[0] !== 'parent') {
 			$entityParts = explode('|', $refParts[0]);
@@ -102,7 +102,7 @@ class Connector {
 	 * @param array $params (optional)
 	 * @return array entities
 	 */
-	function getByIds($entityType, $ids, $params = array()) {
+	public function getByIds($entityType, $ids, $params = array()) {
 		if (empty($ids)) {
 			return array();
 		}
@@ -116,7 +116,7 @@ class Connector {
 	 * @param array $params (optional)
 	 * @return array|null
 	 */
-	function getAll($entityType, $params = array()) {
+	public function getAll($entityType, $params = array()) {
 		$ch = $this->setupCurlHandle($entityType . '.json/crud/', $params);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
 		return $this->getResult($ch);
@@ -130,7 +130,7 @@ class Connector {
 	 * @param array $params (optional)
 	 * @return array
 	 */
-	function getIds($entityType, $selector = array(), $params = array()) {
+	public function getIds($entityType, $selector = array(), $params = array()) {
 		$params['fields'] = '_id';
 		return array_column($this->search($entityType, $selector, $params), '_id');
 	}
@@ -142,10 +142,31 @@ class Connector {
 	 * @param array $selector (optional) i.e. ['firstName' => 'Henk']
 	 * @return array resultData
 	 */
-	function getId($entityType, $selector = array()) {
+	public function getId($entityType, $selector = array()) {
 		$params = array('limit' => 1);
 		$ids = (array) $this->getIds($entityType, $selector, $params);
 		return array_shift($ids);
+	}
+
+	/**
+	 * Returns an array of the history for the entity with the following format:
+	 *  [
+	 * 		[
+	 * 			'updatedBy' => '', // name of the user
+	 * 			'updatedAt' => '', // a string according to the DateTime::ISO8601 format
+	 * 			'_id' => '', // the ID of the entity which can ge fetched seperately
+	 * 		],
+	 * 		...
+	 * ]
+	 *
+	 * @param string $entityType
+	 * @param string $id
+	 * @return array
+	 */
+	public function getHistory($entityType, $id) {
+		$ch = $this->setupCurlHandle($entityType . '.json/history/' . $id);
+		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
+		return $this->getResult($ch);
 	}
 
 	/**
@@ -154,7 +175,7 @@ class Connector {
 	 * @param array $params (optional)
 	 * @return array
 	 */
-	function search($entityType, $querySelector, $params = array()) {
+	public function search($entityType, $querySelector, $params = array()) {
 		$url = $entityType . '.json/search';
 		$ch = $this->setupCurlHandle($url, $params);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
@@ -169,7 +190,7 @@ class Connector {
 	 * @param array $properties - the to-be-saved entity data
 	 * @returns array resultData
 	 */
-	function update($entityType, $properties) {
+	public function update($entityType, $properties) {
 		$isNew = empty($properties['_id']);
 		$ch = $this->setupCurlHandle($entityType . '.json/crud/' . ($isNew ? '' : $properties['_id']));
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, ($isNew ? 'POST' : 'PUT'));
@@ -184,12 +205,11 @@ class Connector {
 	 * @param string $id
 	 * @returns array resultData
 	 */
-	function destroy($entityType, $id) {
+	public function destroy($entityType, $id) {
 		$ch = $this->setupCurlHandle($entityType . '.json/crud/' . $id);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
 		return $this->getResult($ch);
 	}
-
 
 	/**
 	 * Generate a Communibase compatible ID, that consist of:
