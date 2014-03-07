@@ -38,7 +38,7 @@ API
 
 "selectors" may be provided [MongoDb style](http://docs.mongodb.org/manual/reference/method/db.collection.find/#db.collection.find) as array-definitions.
 
-"params" is a key value store for e.g. fields, limit, page and/or sort . See [API docs](https://api.communibase.nl/docs/) for more details.
+"params" is a key value store for e.g. fields, limit, page and/or sort . See [API docs](https://api.communibase.nl/docs/) for more details. In addition to the nodeJS version of this paramater, the fields value may also be an array of fields. This will work more intuitively in PHP environments.
 
 ```
 

@@ -248,6 +248,10 @@ class Connector {
 		if (empty($this->apiKey)) {
 			throw new Exception('Use of connector not possible without API key', Exception::INVALID_API_KEY);
 		}
+		if (array_key_exists('fields', $params) && is_array($params['fields'])) {
+			$params['fields'] = implode(' ', $params['fields']);
+		}
+
 		$params['api_key'] = $this->apiKey;
 		$ch = curl_init($this->serviceUrl . $url . '?' . http_build_query($params));
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
