@@ -26,7 +26,7 @@ require_once __DIR__ . '/../vendor/autoload.php'; // Autoload files using Compos
 use Communibase\Connector;
 
 $cb = new Connector('<your api key here>');
-$peopleNamedTim = $db->search('Person', array('firstName' => 'Tim'), array('limit' => 5));
+$peopleNamedTim = $cb->search('Person', array('firstName' => 'Tim'), array('limit' => 5));
 print_r($peopleNamedTim);
 ```
 
