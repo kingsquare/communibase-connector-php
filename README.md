@@ -13,9 +13,9 @@ Usage
 The easiest way to install the connector is to use [Composer](https://getcomposer.org/) and add the following to your project's composer.json file:
 ```
 {
-    "require": {
-        "kingsquare/communibase-connector-php": "~1"
-    }
+	//"require": {
+	//	//"kingsquare/communibase-connector-php": "~1"
+	//}
 }
 ```
 Now you should be able to install the package by updating your composer environment ```composer install```
@@ -92,18 +92,32 @@ array(
 )
 ```
 
-ResponseData
+Error handling
 --
-Response data is an associative array in the following format:
+
+The connector may throw an error when something goes wrong. Default error handling is as follows:
 
 ```
-array(
-	success => true|false
-	errors => array(
-		array(
-			'field' => '<string>',
-			'message' => '<string>'
-		)
-	)
-)
+try {
+	$person = $cbc->getById('Person', '_DOES_NOT_EXIST_');
+} catch (\Communibase\Connector $e) {
+	echo $e->getMessage();
+}
+```
+
+A special type of error handling involves "Validity" errors for posted documents. 
+
+```
+try {
+	$person = $cbc->update('Person', array(...));
+} catch (\Communibase\Connector $e) {
+	//get an array of errors, per property:
+	//	array(
+	//		array(
+	//			'field' => '<string>',
+	//			'message' => '<string>'
+	//		)
+	//	)
+	print_r($e->getErrors());
+}
 ```
