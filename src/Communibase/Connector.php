@@ -62,6 +62,9 @@ class Connector {
 	 * @return array entity
 	 */
 	public function getById($entityType, $id, $params = array()) {
+		if (empty($id)) {
+			throw new Exception('Id is empty');
+		}
 		$ch = $this->setupCurlHandle($entityType . '.json/crud/' . $id, $params);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
 		return $this->getResult($ch);
