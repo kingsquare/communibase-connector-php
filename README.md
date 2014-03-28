@@ -13,9 +13,9 @@ Usage
 The easiest way to install the connector is to use [Composer](https://getcomposer.org/) and add the following to your project's composer.json file:
 ```
 {
-	//"require": {
-	//	//"kingsquare/communibase-connector-php": "~1"
-	//}
+	"require": {
+		"kingsquare/communibase-connector-php": "~1"
+	}
 }
 ```
 Now you should be able to install the package by updating your composer environment ```composer install```
