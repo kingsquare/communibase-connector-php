@@ -15,6 +15,7 @@ class Connector {
 	 * @var string - ugly, but overrulable for e.g. a local, non-validating instance
 	 */
 	const SERVICE_PRODUCTION_URL = 'https://api.communibase.nl/0.1/';
+	const SERVICE_DEVELOPMENT_URL = 'http://dev.api.communibase.nl:8080/0.1/';
 
 	/**
 	 * The url which is to be used for this connector. Defaults to the production url
@@ -31,10 +32,15 @@ class Connector {
 
 	/**
 	 * @param string $apiKey The API key for Communibase
+	 * @param bool $isDevelopment
 	 * @param string $serviceUrl
 	 */
-	function __construct($apiKey, $serviceUrl = self::SERVICE_PRODUCTION_URL) {
-		$this->serviceUrl = $serviceUrl;
+	function __construct($apiKey, $isDevelopment = false, $serviceUrl = '') {
+		$this->serviceUrl = !empty($serviceUrl)
+				? $serviceUrl
+				: (($isDevelopment)
+						? self::SERVICE_DEVELOPMENT_URL
+						: self::SERVICE_PRODUCTION_URL);
 		$this->apiKey = $apiKey;
 	}
 
@@ -59,6 +65,7 @@ class Connector {
 	 * @param string $entityType
 	 * @param string $id
 	 * @param array $params (optional)
+	 * @throws Exception
 	 * @return array entity
 	 */
 	public function getById($entityType, $id, $params = array()) {
