@@ -34,8 +34,8 @@ class Connector {
 	 * @param string $serviceUrl
 	 */
 	function __construct($apiKey, $serviceUrl = self::SERVICE_PRODUCTION_URL) {
-		$this->serviceUrl = $serviceUrl;
 		$this->apiKey = $apiKey;
+		$this->serviceUrl = $serviceUrl;
 	}
 
 	/**
@@ -59,6 +59,8 @@ class Connector {
 	 * @param string $entityType
 	 * @param string $id
 	 * @param array $params (optional)
+	 * @throws \Communibase\Exception
+	 *
 	 * @return array entity
 	 */
 	public function getById($entityType, $id, $params = array()) {
@@ -103,6 +105,7 @@ class Connector {
 	 * @param string $entityType
 	 * @param array $ids
 	 * @param array $params (optional)
+	 *
 	 * @return array entities
 	 */
 	public function getByIds($entityType, $ids, $params = array()) {
@@ -117,6 +120,7 @@ class Connector {
 	 *
 	 * @param string $entityType
 	 * @param array $params (optional)
+	 *
 	 * @return array|null
 	 */
 	public function getAll($entityType, $params = array()) {
@@ -131,6 +135,7 @@ class Connector {
 	 * @param string $entityType
 	 * @param array $selector (optional)
 	 * @param array $params (optional)
+	 *
 	 * @return array
 	 */
 	public function getIds($entityType, $selector = array(), $params = array()) {
@@ -143,6 +148,7 @@ class Connector {
 	 *
 	 * @param string $entityType i.e. Person
 	 * @param array $selector (optional) i.e. ['firstName' => 'Henk']
+	 *
 	 * @return array resultData
 	 */
 	public function getId($entityType, $selector = array()) {
@@ -164,6 +170,7 @@ class Connector {
 	 *
 	 * @param string $entityType
 	 * @param string $id
+	 *
 	 * @return array
 	 */
 	public function getHistory($entityType, $id) {
@@ -176,6 +183,7 @@ class Connector {
 	 * @param string $entityType
 	 * @param array $querySelector
 	 * @param array $params (optional)
+	 *
 	 * @return array
 	 */
 	public function search($entityType, $querySelector, $params = array()) {
@@ -191,6 +199,7 @@ class Connector {
 	 *
 	 * @param string $entityType
 	 * @param array $properties - the to-be-saved entity data
+	 *
 	 * @returns array resultData
 	 */
 	public function update($entityType, $properties) {
@@ -206,6 +215,7 @@ class Connector {
 	 *
 	 * @param string $entityType
 	 * @param string $id
+	 *
 	 * @returns array resultData
 	 */
 	public function destroy($entityType, $id) {
@@ -222,6 +232,7 @@ class Connector {
 	 * a 2-byte process id, and
 	 * a 3-byte counter, starting with a random value.
 	 *
+	 * @return string
 	 */
 	public function generateId( ) {
 		static $inc = 0;
@@ -244,7 +255,8 @@ class Connector {
 	 *
 	 * @param string $url
 	 * @param array $params (optional)
-	 * @throws Exception
+	 * @throws \Communibase\Exception
+	 *
 	 * @return resource
 	 */
 	private function setupCurlHandle($url, $params = array()) {
@@ -269,7 +281,8 @@ class Connector {
 	 *
 	 * @param resource $ch - Curl handle
 	 * @param bool $expectResponseStatus200 - throw an error when the response status !== 200
-	 * @throws Exception
+	 * @throws \Communibase\Exception
+	 *
 	 * @return array i.e. [success => true|false, [errors => ['message' => 'this is broken', ..]]]
 	 */
 	private function getResult($ch, $expectResponseStatus200 = true) {
@@ -303,7 +316,8 @@ class Connector {
 	 * NOTE: for meta-data like filesize and mimetype, one can use the getById()-method.
 	 *
 	 * @param string $id id string for the file-entity
-	 * @throws Exception
+	 * @throws \Communibase\Exception
+	 *
 	 * @return string Binary contents of the file.
 	 */
 	public function getBinary($id) {
