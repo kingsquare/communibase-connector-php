@@ -100,7 +100,7 @@ The connector may throw an error when something goes wrong. Default error handli
 ```
 try {
 	$person = $cbc->getById('Person', '_DOES_NOT_EXIST_');
-} catch (\Communibase\Connector $e) {
+} catch (\Communibase\Exception $e) {
 	echo $e->getMessage();
 }
 ```
@@ -110,7 +110,7 @@ A special type of error handling involves "Validity" errors for posted documents
 ```
 try {
 	$person = $cbc->update('Person', array(...));
-} catch (\Communibase\Connector $e) {
+} catch (\Communibase\Exception $e) {
 	//get an array of errors, per property:
 	//	array(
 	//		array(
