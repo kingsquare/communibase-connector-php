@@ -34,8 +34,8 @@ class Connector {
 	 * @param string $serviceUrl
 	 */
 	function __construct($apiKey, $serviceUrl = self::SERVICE_PRODUCTION_URL) {
-		$this->apiKey = $apiKey;
 		$this->serviceUrl = $serviceUrl;
+		$this->apiKey = $apiKey;
 	}
 
 	/**
@@ -59,8 +59,6 @@ class Connector {
 	 * @param string $entityType
 	 * @param string $id
 	 * @param array $params (optional)
-	 * @throws \Communibase\Exception
-	 *
 	 * @return array entity
 	 */
 	public function getById($entityType, $id, $params = array()) {
@@ -105,7 +103,6 @@ class Connector {
 	 * @param string $entityType
 	 * @param array $ids
 	 * @param array $params (optional)
-	 *
 	 * @return array entities
 	 */
 	public function getByIds($entityType, $ids, $params = array()) {
@@ -120,7 +117,6 @@ class Connector {
 	 *
 	 * @param string $entityType
 	 * @param array $params (optional)
-	 *
 	 * @return array|null
 	 */
 	public function getAll($entityType, $params = array()) {
@@ -135,7 +131,6 @@ class Connector {
 	 * @param string $entityType
 	 * @param array $selector (optional)
 	 * @param array $params (optional)
-	 *
 	 * @return array
 	 */
 	public function getIds($entityType, $selector = array(), $params = array()) {
@@ -148,7 +143,6 @@ class Connector {
 	 *
 	 * @param string $entityType i.e. Person
 	 * @param array $selector (optional) i.e. ['firstName' => 'Henk']
-	 *
 	 * @return array resultData
 	 */
 	public function getId($entityType, $selector = array()) {
@@ -170,7 +164,6 @@ class Connector {
 	 *
 	 * @param string $entityType
 	 * @param string $id
-	 *
 	 * @return array
 	 */
 	public function getHistory($entityType, $id) {
@@ -183,7 +176,6 @@ class Connector {
 	 * @param string $entityType
 	 * @param array $querySelector
 	 * @param array $params (optional)
-	 *
 	 * @return array
 	 */
 	public function search($entityType, $querySelector, $params = array()) {
@@ -199,7 +191,6 @@ class Connector {
 	 *
 	 * @param string $entityType
 	 * @param array $properties - the to-be-saved entity data
-	 *
 	 * @returns array resultData
 	 */
 	public function update($entityType, $properties) {
@@ -215,7 +206,6 @@ class Connector {
 	 *
 	 * @param string $entityType
 	 * @param string $id
-	 *
 	 * @returns array resultData
 	 */
 	public function destroy($entityType, $id) {
@@ -232,7 +222,6 @@ class Connector {
 	 * a 2-byte process id, and
 	 * a 3-byte counter, starting with a random value.
 	 *
-	 * @return string
 	 */
 	public function generateId( ) {
 		static $inc = 0;
@@ -255,8 +244,7 @@ class Connector {
 	 *
 	 * @param string $url
 	 * @param array $params (optional)
-	 * @throws \Communibase\Exception
-	 *
+	 * @throws Exception
 	 * @return resource
 	 */
 	private function setupCurlHandle($url, $params = array()) {
@@ -277,37 +265,55 @@ class Connector {
 	}
 
 	/**
+	 * @param string $response
+	 * @param int $httpCode
+	 * @return array
+	 * @throws Exception
+	 */
+	private function parseResult($response, $httpCode) {
+		$result = json_decode($response, true);
+
+		if (is_array($result)) {
+			return $result;
+		}
+
+		$jsonLastError = json_last_error();
+		/* @see http://nl1.php.net/manual/en/function.json-last-error.php */
+		$messages = array(
+				JSON_ERROR_DEPTH => 'Maximum stack depth exceeded',
+				JSON_ERROR_STATE_MISMATCH => 'Underflow or the modes mismatch',
+				JSON_ERROR_CTRL_CHAR => 'Unexpected control character found',
+				JSON_ERROR_SYNTAX => 'Syntax error, malformed JSON',
+				JSON_ERROR_UTF8 => 'Malformed UTF-8 characters, possibly incorrectly encoded',
+		);
+		$message = (isset($messages[$jsonLastError]) ? $messages[$jsonLastError] : 'Empty response received');
+		throw new Exception('"' . $message . '" in ' . $response, $httpCode);
+	}
+
+	/**
 	 * Process the curl handle to a response
 	 *
 	 * @param resource $ch - Curl handle
-	 * @param bool $expectResponseStatus200 - throw an error when the response status !== 200
-	 * @throws \Communibase\Exception
-	 *
+	 * @throws Exception
 	 * @return array i.e. [success => true|false, [errors => ['message' => 'this is broken', ..]]]
 	 */
-	private function getResult($ch, $expectResponseStatus200 = true) {
+	private function getResult($ch) {
 		$response = curl_exec($ch);
-		if ($expectResponseStatus200) {
-			$responseData = curl_getinfo($ch);
-			if ($responseData['http_code'] !== 200) {
-				$response = json_decode($response, true);
-				throw new Exception($response['message'],
-						$response['code'],
-						null,
-						(($_=& $response['errors']) ?: array()));
-			}
-		}
-		curl_close($ch);
-
 		if ($response === false) {
 			throw new Exception('Curl failed. ' . PHP_EOL . curl_error($ch));
 		}
+		$curlInfo = curl_getinfo($ch);
+		curl_close($ch);
+		$responseData = $this->parseResult($response, $curlInfo['http_code']);
 
-		$result = json_decode($response, true);
-		if (!is_array($result)) {
-			throw new Exception('Communibase failed. ' . PHP_EOL . $response);
+		if ($curlInfo['http_code'] !== 200) {
+			throw new Exception($responseData['message'],
+					$responseData['code'],
+					null,
+					(($_=& $responseData['errors']) ?: array()));
 		}
-		return $result;
+
+		return $responseData;
 	}
 
 	/**
@@ -316,8 +322,7 @@ class Connector {
 	 * NOTE: for meta-data like filesize and mimetype, one can use the getById()-method.
 	 *
 	 * @param string $id id string for the file-entity
-	 * @throws \Communibase\Exception
-	 *
+	 * @throws Exception
 	 * @return string Binary contents of the file.
 	 */
 	public function getBinary($id) {
