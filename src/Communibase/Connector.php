@@ -4,6 +4,8 @@ namespace Communibase;
 /**
  * Communibase (http://communibase.nl) data Connector for PHP
  *
+ * For more information see http://communibase.nl
+ *
  * @package Communibase
  * @author Kingsquare (source@kingsquare.nl)
  * @copyright Copyright (c) Kingsquare BV (http://www.kingsquare.nl)
@@ -19,26 +21,40 @@ class Connector {
 	const SERVICE_PRODUCTION_URL = 'https://api.communibase.nl/0.1/';
 
 	/**
-	 * The url which is to be used for this connector. Defaults to the production url
-	 *
-	 * @var string
-	 */
-	private $serviceUrl;
-
-	/**
-	 * The API key which is to be used for the api
+	 * The API key which is to be used for the api.
+	 * Is required to be set via the constructor.
 	 *
 	 * @var string
 	 */
 	private $apiKey;
 
 	/**
-	 * @param string $apiKey The API key for Communibase
-	 * @param string $serviceUrl
+	 * The url which is to be used for this connector. Defaults to the production url.
+	 * Can be set via the constructor.
+	 *
+	 * @var string
 	 */
-	function __construct($apiKey, $serviceUrl = self::SERVICE_PRODUCTION_URL) {
-		$this->serviceUrl = $serviceUrl;
+	private $serviceUrl;
+
+	/**
+	 * The Host header to use in the case the service url is proxied/ip/within a container et al.
+	 * Can be set via the constructor.
+	 *
+	 * @var string
+	 */
+	private $serviceHostHeader;
+
+	/**
+	 * Create a new Communibase Connector instance based on the given api-key and possible serviceUrl
+	 *
+	 * @param string $apiKey The API key for Communibase
+	 * @param string $serviceUrl The Communibase API endpoint; defaults to self::SERVICE_PRODUCTION_URL
+	 * @param string $serviceHostHeader In the case the $serviceUrl is an IP or proxied you may need to set the proper HOST to be able to access the endpoint.
+	 */
+	function __construct($apiKey, $serviceUrl = self::SERVICE_PRODUCTION_URL, $serviceHostHeader = '') {
 		$this->apiKey = $apiKey;
+		$this->serviceUrl = $serviceUrl;
+		$this->serviceHostHeader = $apiKey;
 	}
 
 	/**
@@ -167,6 +183,8 @@ class Connector {
 
 	/**
 	 * Returns an array of the history for the entity with the following format:
+	 *
+	 * <code>
 	 *  [
 	 * 		[
 	 * 			'updatedBy' => '', // name of the user
@@ -175,6 +193,7 @@ class Connector {
 	 * 		],
 	 * 		...
 	 * ]
+	 * </code>
 	 *
 	 * @param string $entityType
 	 * @param string $id
@@ -188,6 +207,8 @@ class Connector {
 	}
 
 	/**
+	 * Search for the given entity by optional passed selector/params
+	 *
 	 * @param string $entityType
 	 * @param array $querySelector
 	 * @param array $params (optional)
@@ -204,6 +225,8 @@ class Connector {
 
 	/**
 	 * This will save an entity in Communibase. When a _id-field is found, this entity will be updated
+	 *
+	 * NOTE: When updating, depending on the Entity, you may need to include all fields.
 	 *
 	 * @param string $entityType
 	 * @param array $properties - the to-be-saved entity data
@@ -292,11 +315,19 @@ class Connector {
 		if (array_key_exists('fields', $params) && is_array($params['fields'])) {
 			$params['fields'] = implode(' ', $params['fields']);
 		}
-
 		$params['api_key'] = $this->apiKey;
+
 		$ch = curl_init($this->serviceUrl . $url . '?' . http_build_query($params));
+
+		$headers = array(
+			'Content-Type: application/json'
+		);
+		if (!empty($this->serviceHostHeader)) {
+			// send other "Host" header if required
+			$headers[] = 'Host: ' . $this->serviceHostHeader;
+		}
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
 		return $ch;
