@@ -2,7 +2,7 @@
 namespace Communibase;
 
 /**
- * Class Connector
+ * Communibase (http://communibase.nl) data Connector for PHP
  *
  * @package Communibase
  * @author Kingsquare (source@kingsquare.nl)
@@ -12,7 +12,9 @@ namespace Communibase;
 class Connector {
 
 	/**
-	 * @var string - ugly, but overrulable for e.g. a local, non-validating instance
+	 * The official service URI; can be overridden via the constructor
+	 *
+	 * @var string
 	 */
 	const SERVICE_PRODUCTION_URL = 'https://api.communibase.nl/0.1/';
 
@@ -25,6 +27,7 @@ class Connector {
 
 	/**
 	 * The API key which is to be used for the api
+	 *
 	 * @var string
 	 */
 	private $apiKey;
@@ -40,8 +43,11 @@ class Connector {
 
 	/**
 	 * Returns an array that has all the fields according to the definition in Communibase.
+	 *
 	 * @param string $entityType
+	 *
 	 * @return array
+	 *
 	 * @throws Exception
 	 */
 	public function getTemplate($entityType) {
@@ -59,7 +65,10 @@ class Connector {
 	 * @param string $entityType
 	 * @param string $id
 	 * @param array $params (optional)
+	 *
 	 * @return array entity
+	 *
+	 * @throws Exception
 	 */
 	public function getById($entityType, $id, $params = array()) {
 		if (empty($id)) {
@@ -75,9 +84,10 @@ class Connector {
 	 *
 	 * @param string $ref
 	 * @param array $parentEntity (optional)
-	 * @throws \Communibase\Exception
 	 *
 	 * @return array the referred Entity data
+	 *
+	 * @throws Exception
 	 */
 	public function getByRef($ref, $parentEntity = array()) {
 		$refParts = explode('.', $ref);
@@ -103,6 +113,7 @@ class Connector {
 	 * @param string $entityType
 	 * @param array $ids
 	 * @param array $params (optional)
+	 *
 	 * @return array entities
 	 */
 	public function getByIds($entityType, $ids, $params = array()) {
@@ -117,6 +128,7 @@ class Connector {
 	 *
 	 * @param string $entityType
 	 * @param array $params (optional)
+	 *
 	 * @return array|null
 	 */
 	public function getAll($entityType, $params = array()) {
@@ -131,6 +143,7 @@ class Connector {
 	 * @param string $entityType
 	 * @param array $selector (optional)
 	 * @param array $params (optional)
+	 *
 	 * @return array
 	 */
 	public function getIds($entityType, $selector = array(), $params = array()) {
@@ -143,6 +156,7 @@ class Connector {
 	 *
 	 * @param string $entityType i.e. Person
 	 * @param array $selector (optional) i.e. ['firstName' => 'Henk']
+	 *
 	 * @return array resultData
 	 */
 	public function getId($entityType, $selector = array()) {
@@ -164,6 +178,7 @@ class Connector {
 	 *
 	 * @param string $entityType
 	 * @param string $id
+	 *
 	 * @return array
 	 */
 	public function getHistory($entityType, $id) {
@@ -176,6 +191,7 @@ class Connector {
 	 * @param string $entityType
 	 * @param array $querySelector
 	 * @param array $params (optional)
+	 *
 	 * @return array
 	 */
 	public function search($entityType, $querySelector, $params = array()) {
@@ -191,6 +207,7 @@ class Connector {
 	 *
 	 * @param string $entityType
 	 * @param array $properties - the to-be-saved entity data
+	 *
 	 * @returns array resultData
 	 */
 	public function update($entityType, $properties) {
@@ -206,7 +223,8 @@ class Connector {
 	 *
 	 * @param string $entityType
 	 * @param string $id
-	 * @returns array resultData
+	 *
+	 * @return array resultData
 	 */
 	public function destroy($entityType, $id) {
 		$ch = $this->setupCurlHandle($entityType . '.json/crud/' . $id);
@@ -215,7 +233,7 @@ class Connector {
 	}
 
 	/**
-	 * Generate a Communibase compatible ID, that consist of:
+	 * Generate a Communibase compatible ID, that consists of:
 	 *
 	 * a 4-byte timestamp,
 	 * a 3-byte machine identifier,
@@ -240,12 +258,32 @@ class Connector {
 	}
 
 	/**
+	 * Get the binary contents of a file by its ID
+	 *
+	 * NOTE: for meta-data like filesize and mimetype, one can use the getById()-method.
+	 *
+	 * @param string $id id string for the file-entity
+	 *
+	 * @return string Binary contents of the file.
+	 *
+	 * @throws Exception
+	 */
+	public function getBinary($id) {
+		if (empty($this->apiKey)) {
+			throw new Exception('Use of connector not possible without API key', Exception::INVALID_API_KEY);
+		}
+		return file_get_contents($this->serviceUrl . 'File.json/binary/' . $id . '?api_key=' . $this->apiKey);
+	}
+
+	/**
 	 * Setup a curl handle for Communibase Requests
 	 *
 	 * @param string $url
 	 * @param array $params (optional)
-	 * @throws Exception
+	 *
 	 * @return resource
+	 *
+	 * @throws Exception
 	 */
 	private function setupCurlHandle($url, $params = array()) {
 		if (empty($this->apiKey)) {
@@ -265,9 +303,13 @@ class Connector {
 	}
 
 	/**
+	 * Parse the Communibase result and if necessary throw an exception
+	 *
 	 * @param string $response
 	 * @param int $httpCode
+	 *
 	 * @return array
+	 *
 	 * @throws Exception
 	 */
 	private function parseResult($response, $httpCode) {
@@ -294,8 +336,10 @@ class Connector {
 	 * Process the curl handle to a response
 	 *
 	 * @param resource $ch - Curl handle
-	 * @throws Exception
+	 *
 	 * @return array i.e. [success => true|false, [errors => ['message' => 'this is broken', ..]]]
+	 *
+	 * @throws Exception
 	 */
 	private function getResult($ch) {
 		$response = curl_exec($ch);
@@ -314,21 +358,5 @@ class Connector {
 		}
 
 		return $responseData;
-	}
-
-	/**
-	 * Get the binary contents of a file by its ID
-	 *
-	 * NOTE: for meta-data like filesize and mimetype, one can use the getById()-method.
-	 *
-	 * @param string $id id string for the file-entity
-	 * @throws Exception
-	 * @return string Binary contents of the file.
-	 */
-	public function getBinary($id) {
-		if (empty($this->apiKey)) {
-			throw new Exception('Use of connector not possible without API key', Exception::INVALID_API_KEY);
-		}
-		return file_get_contents($this->serviceUrl . 'File.json/binary/' . $id . '?api_key=' . $this->apiKey);
 	}
 }
