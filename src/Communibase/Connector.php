@@ -314,7 +314,7 @@ class Connector {
 
 		$ch = curl_init($this->serviceUrl . $url . '?' . http_build_query($params));
 
-		$headers = !empty($this->extraHeaders) ? $this->extraHeaders : [];
+		$headers = !empty($this->extraHeaders) ? $this->extraHeaders : array();
 		$headers[] = 'Content-Type: application/json';
 
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
