@@ -37,24 +37,19 @@ class Connector {
 	private $serviceUrl;
 
 	/**
-	 * The Host header to use in the case the service url is proxied/ip/within a container et al.
-	 * Can be set via the constructor.
-	 *
-	 * @var string
+	 * @var array of extra headers to send with each request
 	 */
-	private $serviceHostHeader;
+	private $extraHeaders;
 
 	/**
 	 * Create a new Communibase Connector instance based on the given api-key and possible serviceUrl
 	 *
 	 * @param string $apiKey The API key for Communibase
 	 * @param string $serviceUrl The Communibase API endpoint; defaults to self::SERVICE_PRODUCTION_URL
-	 * @param string $serviceHostHeader In the case the $serviceUrl is an IP or proxied you may need to set the proper HOST to be able to access the endpoint.
 	 */
-	function __construct($apiKey, $serviceUrl = self::SERVICE_PRODUCTION_URL, $serviceHostHeader = '') {
+	function __construct($apiKey, $serviceUrl = self::SERVICE_PRODUCTION_URL) {
 		$this->apiKey = $apiKey;
 		$this->serviceUrl = $serviceUrl;
-		$this->serviceHostHeader = $apiKey;
 	}
 
 	/**
@@ -319,18 +314,25 @@ class Connector {
 
 		$ch = curl_init($this->serviceUrl . $url . '?' . http_build_query($params));
 
-		$headers = array(
-			'Content-Type: application/json'
-		);
-		if (!empty($this->serviceHostHeader)) {
-			// send other "Host" header if required
-			$headers[] = 'Host: ' . $this->serviceHostHeader;
-		}
+		$headers = !empty($this->extraHeaders) ? $this->extraHeaders : [];
+		$headers[] = 'Content-Type: application/json';
+
 		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
 		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
 		return $ch;
+	}
+
+	/**
+	 * Add extra headers to be added to each request
+	 *
+	 * @see http://php.net/manual/en/function.header.php
+	 *
+	 * @param array $extraHeaders
+	 */
+	public function addExtraHeaders(array $extraHeaders) {
+		$this->extraHeaders = $extraHeaders;
 	}
 
 	/**
