@@ -85,6 +85,9 @@ class Connector {
 		if (empty($id)) {
 			throw new Exception('Id is empty');
 		}
+		if (!$this->isIdValid($id)) {
+			throw new Exception('Id is invalid, please use a correctly formatted id');
+		}
 		$ch = $this->setupCurlHandle($entityType . '.json/crud/' . $id, $params);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
 		return $this->getResult($ch);
@@ -128,10 +131,13 @@ class Connector {
 	 * @return array entities
 	 */
 	public function getByIds($entityType, $ids, $params = array()) {
-		if (empty($ids)) {
+		$validIds = array_filter($ids, array($this, 'isIdValid'));
+
+		if (empty($validIds)) {
 			return array();
 		}
-		return $this->search($entityType, array('_id' => array('$in' => $ids)), $params);
+
+		return $this->search($entityType, array('_id' => array('$in' => $validIds)), $params);
 	}
 
 	/**
@@ -391,5 +397,22 @@ class Connector {
 		}
 
 		return $responseData;
+	}
+
+	/**
+	 * @param string $id
+	 *
+	 * @return bool
+	 */
+	private function isIdValid($id) {
+		if (empty($id)) {
+			return false;
+		}
+
+		if (preg_match('#[0-9a-fA-F]{24}#', $id) === 0) {
+			return false;
+		}
+
+		return true;
 	}
 }
