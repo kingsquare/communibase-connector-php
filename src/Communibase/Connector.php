@@ -243,6 +243,27 @@ class Connector {
 	}
 
 	/**
+	 * Finalize an invoice by adding an invoiceNumber to it.
+	 * Besides, invoice items will receive a "generalLedgerAccountNumber".
+	 * This number will be unique and sequential within the "daybook" of the invoice.
+	 *
+	 * NOTE: this is Invoice specific
+	 *
+	 * @param string $entityType
+	 * @param string $id
+	 * @return array
+	 * @throws Exception
+	 */
+	public function finalize($entityType, $id) {
+		if ($entityType !== 'Invoice') {
+			throw new Exception('Cannot call finalize on ' . $entityType);
+		}
+		$ch = $this->setupCurlHandle($entityType . '.json/finalize/' . $id);
+		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
+		return $this->getResult($ch);
+	}
+
+	/**
 	 * Delete something from Communibase
 	 *
 	 * @param string $entityType
