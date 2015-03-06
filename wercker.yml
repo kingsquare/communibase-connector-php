@@ -1,0 +1,7 @@
+box: wercker/php
+build:
+    steps:
+      - leipert/composer-install@0.0.1
+      - script:
+          name: run unit tests
+          code: phpunit
