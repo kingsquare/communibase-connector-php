@@ -14,7 +14,7 @@
  *
  * This software consists of voluntary contributions made by many individuals
  * and is licensed under the MIT license. For more information, see
- * <https://www.communibase.nl>.
+ * <https://communibase.nl>.
  */
 
 namespace Communibase\Logging;
@@ -22,28 +22,27 @@ namespace Communibase\Logging;
 /**
  * A Query logger that logs to the standard output using echo/var_dump.
  */
-class EchoQueryLogger implements QueryLogger
-{
-    /**
-     * {@inheritdoc}
-     */
-    public function startQuery($query, array $params = null, array $data = null)
-    {
-    	echo json_encode($query) . PHP_EOL;
+class EchoQueryLogger implements QueryLogger {
 
-        if ($params) {
-            var_dump($params);
-    	}
+	/**
+	 * {@inheritdoc}
+	 */
+	public function startQuery($query, array $params = null, array $data = null ) {
+		echo $query . PHP_EOL;
 
-        if ($data) {
-            var_dump($data);
-        }
-    }
+		if ($params) {
+			var_dump($params);
+		}
 
-    /**
-     * {@inheritdoc}
-     */
-    public function stopQuery()
-    {
-    }
+		if ($data) {
+			var_dump($data);
+		}
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function stopQuery() {
+	}
+
 }

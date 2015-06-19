@@ -14,7 +14,7 @@
  *
  * This software consists of voluntary contributions made by many individuals
  * and is licensed under the MIT license. For more information, see
- * <https://www.communibase.nl>.
+ * <https://communibase.nl>.
  */
 
 namespace Communibase\Logging;
@@ -22,50 +22,51 @@ namespace Communibase\Logging;
 /**
  * Includes executed Queries in a Debug Stack.
  */
-class DebugStack implements QueryLogger
-{
-    /**
-     * Executed queries.
-     *
-     * @var array
-     */
-    public $queries = array();
+class DebugStack implements QueryLogger {
 
-    /**
-     * If Debug Stack is enabled (log queries) or not.
-     *
-     * @var boolean
-     */
-    public $enabled = true;
+	/**
+	 * Executed queries.
+	 *
+	 * @var array
+	 */
+	public $queries = array();
 
-    /**
-     * @var float|null
-     */
-    public $start = null;
+	/**
+	 * If Debug Stack is enabled (log queries) or not.
+	 *
+	 * @var boolean
+	 */
+	public $enabled = true;
 
-    /**
-     * @var integer
-     */
-    public $currentQuery = 0;
+	/**
+	 * @var float|null
+	 */
+	public $start = null;
 
-    /**
-     * {@inheritdoc}
-     */
-    public function startQuery($query, array $params = null, array $data = null)
-    {
-        if ($this->enabled) {
-            $this->start = microtime(true);
-            $this->queries[++$this->currentQuery] = array('query' => $query, 'params' => $params, 'data' => $data, 'executionMS' => 0);
-        }
-    }
+	/**
+	 * @var integer
+	 */
+	public $currentQuery = 0;
 
-    /**
-     * {@inheritdoc}
-     */
-    public function stopQuery()
-    {
-        if ($this->enabled) {
-            $this->queries[$this->currentQuery]['executionMS'] = microtime(true) - $this->start;
-        }
-    }
+	/**
+	 * {@inheritdoc}
+	 */
+	public function startQuery( $query, array $params = null, array $data = null ) {
+		if ($this->enabled) {
+			$this->start = microtime( true );
+			$this->queries[++$this->currentQuery] = array(
+				'query' => $query, 'params' => $params, 'data' => $data, 'executionMS' => 0
+			);
+		}
+	}
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function stopQuery() {
+		if ($this->enabled) {
+			$this->queries[$this->currentQuery]['executionMS'] = microtime(true) - $this->start;
+		}
+	}
+
 }
