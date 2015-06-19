@@ -121,3 +121,26 @@ try {
 	print_r($e->getErrors());
 }
 ```
+
+### Query Logging
+
+It is also possible to add a query logger to the connector.
+
+#### Stack query data for debug/dev purposes:
+
+    $connector->setQueryLogger(new DebugStack());
+    
+Query data available after run via `$connector->getQueryLogger()->queries`
+ 
+#### Echo query for debug/dev purposes (handy for cli):
+
+    $connector->setQueryLogger(new EchoQueryLogger());
+    
+Echoes each query to the current output stream.
+ 
+#### Create own query logging:
+
+    $connector->setQueryLogger(new MyOwnQueryLogger());
+    
+`MyOwnQueryLogger` implements `QueryLogger` and does something with the data.. possible db/api call
+
