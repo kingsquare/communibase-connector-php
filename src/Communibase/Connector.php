@@ -47,7 +47,7 @@ class Connector {
 	 * @param string $apiKey The API key for Communibase
 	 * @param string $serviceUrl The Communibase API endpoint; defaults to self::SERVICE_PRODUCTION_URL
 	 */
-	function __construct($apiKey, $serviceUrl = self::SERVICE_PRODUCTION_URL) {
+	public function __construct($apiKey, $serviceUrl = self::SERVICE_PRODUCTION_URL) {
 		$this->apiKey = $apiKey;
 		$this->serviceUrl = $serviceUrl;
 	}
@@ -88,9 +88,7 @@ class Connector {
 		if (!$this->isIdValid($id)) {
 			throw new Exception('Id is invalid, please use a correctly formatted id');
 		}
-		$ch = $this->setupCurlHandle($entityType . '.json/crud/' . $id, $params);
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-		return $this->getResult($ch);
+		return $this->doGet($entityType . '.json/crud/' . $id, $params);
 	}
 
 	/**
@@ -149,9 +147,7 @@ class Connector {
 	 * @return array|null
 	 */
 	public function getAll($entityType, $params = array()) {
-		$ch = $this->setupCurlHandle($entityType . '.json/crud/', $params);
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-		return $this->getResult($ch);
+		return $this->doGet($entityType . '.json/crud/', $params);
 	}
 
 	/**
@@ -200,11 +196,11 @@ class Connector {
 	 * @param string $id
 	 *
 	 * @return array
+	 *
+	 * @throws Exception
 	 */
 	public function getHistory($entityType, $id) {
-		$ch = $this->setupCurlHandle($entityType . '.json/history/' . $id);
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-		return $this->getResult($ch);
+		return $this->doGet($entityType . '.json/history/' . $id);
 	}
 
 	/**
@@ -215,13 +211,11 @@ class Connector {
 	 * @param array $params (optional)
 	 *
 	 * @return array
+	 *
+	 * @throws Exception
 	 */
 	public function search($entityType, $querySelector, $params = array()) {
-		$url = $entityType . '.json/search';
-		$ch = $this->setupCurlHandle($url, $params);
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-		curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($querySelector));
-		return $this->getResult($ch);
+		return $this->doPost($entityType . '.json/search', $params, $querySelector);
 	}
 
 	/**
@@ -233,13 +227,16 @@ class Connector {
 	 * @param array $properties - the to-be-saved entity data
 	 *
 	 * @returns array resultData
+	 *
+	 * @throws Exception
 	 */
 	public function update($entityType, $properties) {
 		$isNew = empty($properties['_id']);
-		$ch = $this->setupCurlHandle($entityType . '.json/crud/' . ($isNew ? '' : $properties['_id']));
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, ($isNew ? 'POST' : 'PUT'));
-		curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($properties));
-		return $this->getResult($ch);
+		return $this->{$isNew ? 'doPost' : 'doPut'}(
+			$entityType . '.json/crud/' . ($isNew ? '' : $properties['_id']),
+			[],
+			$properties
+		);
 	}
 
 	/**
@@ -251,16 +248,16 @@ class Connector {
 	 *
 	 * @param string $entityType
 	 * @param string $id
+	 *
 	 * @return array
+	 *
 	 * @throws Exception
 	 */
 	public function finalize($entityType, $id) {
 		if ($entityType !== 'Invoice') {
 			throw new Exception('Cannot call finalize on ' . $entityType);
 		}
-		$ch = $this->setupCurlHandle($entityType . '.json/finalize/' . $id);
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-		return $this->getResult($ch);
+		return $this->doPost($entityType . '.json/finalize/' . $id);
 	}
 
 	/**
@@ -272,9 +269,7 @@ class Connector {
 	 * @return array resultData
 	 */
 	public function destroy($entityType, $id) {
-		$ch = $this->setupCurlHandle($entityType . '.json/crud/' . $id);
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
-		return $this->getResult($ch);
+		return $this->doDelete($entityType . '.json/crud/' . $id);
 	}
 
 	/**
@@ -285,6 +280,7 @@ class Connector {
 	 * a 2-byte process id, and
 	 * a 3-byte counter, starting with a random value.
 	 *
+	 * @return string
 	 */
 	public function generateId( ) {
 		static $inc = 0;
@@ -393,19 +389,85 @@ class Connector {
 	}
 
 	/**
-	 * Process the curl handle to a response
+	 * @param string $path
+	 * @param array $params
+	 * @param array $data
 	 *
-	 * @param resource $ch - Curl handle
+	 * @return array
+	 *
+	 * @throws Exception
+	 */
+	private function doGet($path, $params = [], $data = []) {
+		return $this->getResult('GET', $path, $params, $data);
+	}
+
+	/**
+	 * @param string $path
+	 * @param array $params
+	 * @param array $data
+	 *
+	 * @return array
+	 *
+	 * @throws Exception
+	 */
+	private function doPost($path, $params = [], $data = []) {
+		return $this->getResult('POST', $path, $params, $data);
+	}
+
+	/**
+	 * @param string $path
+	 * @param array $params
+	 * @param array $data
+	 *
+	 * @return array
+	 *
+	 * @throws Exception
+	 */
+	private function doPut($path, $params = [], $data = []) {
+		return $this->getResult('PUT', $path, $params, $data);
+	}
+
+	/**
+	 * @param string $path
+	 * @param array $params
+	 * @param array $data
+	 *
+	 * @return array
+	 *
+	 * @throws Exception
+	 */
+	private function doDelete($path, $params = [], $data = []) {
+		return $this->getResult('DELETE', $path, $params, $data);
+	}
+
+	/**
+	 * @todo replace with guzzle? adds an extra dependency...
+	 *
+	 * Process the request
+	 *
+	 * @param string $method
+	 * @param string $path
+	 * @param array $params
+	 * @param array $data
 	 *
 	 * @return array i.e. [success => true|false, [errors => ['message' => 'this is broken', ..]]]
 	 *
 	 * @throws Exception
 	 */
-	private function getResult($ch) {
+	protected function getResult($method, $path, $params = [], $data = []) {
+
+		$ch = $this->setupCurlHandle($path, $params);
+		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+
+		if (!empty($data)) {
+			curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+		}
+
 		$response = curl_exec($ch);
 		if ($response === false) {
 			throw new Exception('Curl failed. ' . PHP_EOL . curl_error($ch));
 		}
+
 		$curlInfo = curl_getinfo($ch);
 		curl_close($ch);
 		$responseData = $this->parseResult($response, $curlInfo['http_code']);
