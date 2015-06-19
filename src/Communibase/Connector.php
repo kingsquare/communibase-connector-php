@@ -1,6 +1,8 @@
 <?php
 namespace Communibase;
 
+use Communibase\Logging\QueryLogger;
+
 /**
  * Communibase (http://communibase.nl) data Connector for PHP
  *
@@ -40,6 +42,11 @@ class Connector {
 	 * @var array of extra headers to send with each request
 	 */
 	private $extraHeaders;
+
+	/**
+	 * @var QueryLogger
+	 */
+	private $logger;
 
 	/**
 	 * Create a new Communibase Connector instance based on the given api-key and possible serviceUrl
@@ -313,7 +320,19 @@ class Connector {
 		if (empty($this->apiKey)) {
 			throw new Exception('Use of connector not possible without API key', Exception::INVALID_API_KEY);
 		}
-		return file_get_contents($this->serviceUrl . 'File.json/binary/' . $id . '?api_key=' . $this->apiKey);
+
+		if ($this->logger) {
+			$this->logger->startQuery('File.json/binary/' . $id);
+		}
+
+		//@todo not use file_get_contents but something that is more "controllable" i.e. guzzle
+		$result = file_get_contents($this->serviceUrl . 'File.json/binary/' . $id . '?api_key=' . $this->apiKey);
+
+		if ($this->logger) {
+			$this->logger->stopQuery();
+		}
+
+		return $result;
 	}
 
 	/**
@@ -463,7 +482,16 @@ class Connector {
 			curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
 		}
 
+		if ($this->logger) {
+			$this->logger->startQuery($path, $params, $data);
+		}
+
 		$response = curl_exec($ch);
+
+		if ($this->logger) {
+			$this->logger->stopQuery();
+		}
+
 		if ($response === false) {
 			throw new Exception('Curl failed. ' . PHP_EOL . curl_error($ch));
 		}
@@ -497,5 +525,19 @@ class Connector {
 		}
 
 		return true;
+	}
+
+	/**
+	 * @param QueryLogger $logger
+	 */
+	public function setQueryLogger(QueryLogger $logger) {
+		$this->logger = $logger;
+	}
+
+	/**
+	 * @return QueryLogger
+	 */
+	public function getQueryLogger() {
+		return $this->logger;
 	}
 }
