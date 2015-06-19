@@ -280,32 +280,6 @@ class Connector {
 	}
 
 	/**
-	 * Generate a Communibase compatible ID, that consists of:
-	 *
-	 * a 4-byte timestamp,
-	 * a 3-byte machine identifier,
-	 * a 2-byte process id, and
-	 * a 3-byte counter, starting with a random value.
-	 *
-	 * @return string
-	 */
-	public function generateId( ) {
-		static $inc = 0;
-
-		$ts = pack('N', time());
-		$m = substr(md5(gethostname()), 0, 3);
-		$pid = pack('n', 1); //posix_getpid()
-		$trail = substr(pack('N', $inc++), 1, 3);
-
-		$bin = sprintf("%s%s%s%s", $ts, $m, $pid, $trail);
-		$id = '';
-		for ($i = 0; $i < 12; $i++) {
-			$id .= sprintf("%02X", ord($bin[$i]));
-		}
-		return strtolower($id);
-	}
-
-	/**
 	 * Get the binary contents of a file by its ID
 	 *
 	 * NOTE: for meta-data like filesize and mimetype, one can use the getById()-method.
@@ -336,78 +310,6 @@ class Connector {
 	}
 
 	/**
-	 * Setup a curl handle for Communibase Requests
-	 *
-	 * @param string $url
-	 * @param array $params (optional)
-	 *
-	 * @return resource
-	 *
-	 * @throws Exception
-	 */
-	private function setupCurlHandle($url, $params = array()) {
-		if (empty($this->apiKey)) {
-			throw new Exception('Use of connector not possible without API key', Exception::INVALID_API_KEY);
-		}
-		if (array_key_exists('fields', $params) && is_array($params['fields'])) {
-			$params['fields'] = implode(' ', $params['fields']);
-		}
-		$params['api_key'] = $this->apiKey;
-
-		$ch = curl_init($this->serviceUrl . $url . '?' . http_build_query($params));
-
-		$headers = !empty($this->extraHeaders) ? $this->extraHeaders : array();
-		$headers[] = 'Content-Type: application/json';
-
-		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
-		return $ch;
-	}
-
-	/**
-	 * Add extra headers to be added to each request
-	 *
-	 * @see http://php.net/manual/en/function.header.php
-	 *
-	 * @param array $extraHeaders
-	 */
-	public function addExtraHeaders(array $extraHeaders) {
-		$this->extraHeaders = $extraHeaders;
-	}
-
-	/**
-	 * Parse the Communibase result and if necessary throw an exception
-	 *
-	 * @param string $response
-	 * @param int $httpCode
-	 *
-	 * @return array
-	 *
-	 * @throws Exception
-	 */
-	private function parseResult($response, $httpCode) {
-		$result = json_decode($response, true);
-
-		if (is_array($result)) {
-			return $result;
-		}
-
-		$jsonLastError = json_last_error();
-		/* @see http://nl1.php.net/manual/en/function.json-last-error.php */
-		$messages = array(
-				JSON_ERROR_DEPTH => 'Maximum stack depth exceeded',
-				JSON_ERROR_STATE_MISMATCH => 'Underflow or the modes mismatch',
-				JSON_ERROR_CTRL_CHAR => 'Unexpected control character found',
-				JSON_ERROR_SYNTAX => 'Syntax error, malformed JSON',
-				JSON_ERROR_UTF8 => 'Malformed UTF-8 characters, possibly incorrectly encoded',
-		);
-		$message = (isset($messages[$jsonLastError]) ? $messages[$jsonLastError] : 'Empty response received');
-		throw new Exception('"' . $message . '" in ' . $response, $httpCode);
-	}
-
-	/**
 	 * @param string $path
 	 * @param array $params
 	 * @param array $data
@@ -416,7 +318,7 @@ class Connector {
 	 *
 	 * @throws Exception
 	 */
-	private function doGet($path, $params = [], $data = []) {
+	protected function doGet($path, $params = [], $data = []) {
 		return $this->getResult('GET', $path, $params, $data);
 	}
 
@@ -429,7 +331,7 @@ class Connector {
 	 *
 	 * @throws Exception
 	 */
-	private function doPost($path, $params = [], $data = []) {
+	protected function doPost($path, $params = [], $data = []) {
 		return $this->getResult('POST', $path, $params, $data);
 	}
 
@@ -442,7 +344,7 @@ class Connector {
 	 *
 	 * @throws Exception
 	 */
-	private function doPut($path, $params = [], $data = []) {
+	protected function doPut($path, $params = [], $data = []) {
 		return $this->getResult('PUT', $path, $params, $data);
 	}
 
@@ -455,7 +357,7 @@ class Connector {
 	 *
 	 * @throws Exception
 	 */
-	private function doDelete($path, $params = [], $data = []) {
+	protected function doDelete($path, $params = [], $data = []) {
 		return $this->getResult('DELETE', $path, $params, $data);
 	}
 
@@ -511,11 +413,72 @@ class Connector {
 	}
 
 	/**
+	 * Setup a curl handle for Communibase Requests
+	 *
+	 * @param string $url
+	 * @param array $params (optional)
+	 *
+	 * @return resource
+	 *
+	 * @throws Exception
+	 */
+	private function setupCurlHandle($url, $params = array()) {
+		if (empty($this->apiKey)) {
+			throw new Exception('Use of connector not possible without API key', Exception::INVALID_API_KEY);
+		}
+		if (array_key_exists('fields', $params) && is_array($params['fields'])) {
+			$params['fields'] = implode(' ', $params['fields']);
+		}
+		$params['api_key'] = $this->apiKey;
+
+		$ch = curl_init($this->serviceUrl . $url . '?' . http_build_query($params));
+
+		$headers = !empty($this->extraHeaders) ? $this->extraHeaders : array();
+		$headers[] = 'Content-Type: application/json';
+
+		curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+		return $ch;
+	}
+
+	/**
+	 * Parse the Communibase result and if necessary throw an exception
+	 *
+	 * @param string $response
+	 * @param int $httpCode
+	 *
+	 * @return array
+	 *
+	 * @throws Exception
+	 */
+	private function parseResult($response, $httpCode) {
+		$result = json_decode($response, true);
+
+		if (is_array($result)) {
+			return $result;
+		}
+
+		$jsonLastError = json_last_error();
+		/* @see http://nl1.php.net/manual/en/function.json-last-error.php */
+		$messages = array(
+				JSON_ERROR_DEPTH => 'Maximum stack depth exceeded',
+				JSON_ERROR_STATE_MISMATCH => 'Underflow or the modes mismatch',
+				JSON_ERROR_CTRL_CHAR => 'Unexpected control character found',
+				JSON_ERROR_SYNTAX => 'Syntax error, malformed JSON',
+				JSON_ERROR_UTF8 => 'Malformed UTF-8 characters, possibly incorrectly encoded',
+		);
+		$message = (isset($messages[$jsonLastError]) ? $messages[$jsonLastError] : 'Empty response received');
+		throw new Exception('"' . $message . '" in ' . $response, $httpCode);
+	}
+
+	/**
 	 * @param string $id
 	 *
 	 * @return bool
 	 */
-	private function isIdValid($id) {
+	public function isIdValid($id) {
 		if (empty($id)) {
 			return false;
 		}
@@ -525,6 +488,43 @@ class Connector {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Generate a Communibase compatible ID, that consists of:
+	 *
+	 * a 4-byte timestamp,
+	 * a 3-byte machine identifier,
+	 * a 2-byte process id, and
+	 * a 3-byte counter, starting with a random value.
+	 *
+	 * @return string
+	 */
+	public function generateId( ) {
+		static $inc = 0;
+
+		$ts = pack('N', time());
+		$m = substr(md5(gethostname()), 0, 3);
+		$pid = pack('n', 1); //posix_getpid()
+		$trail = substr(pack('N', $inc++), 1, 3);
+
+		$bin = sprintf("%s%s%s%s", $ts, $m, $pid, $trail);
+		$id = '';
+		for ($i = 0; $i < 12; $i++) {
+			$id .= sprintf("%02X", ord($bin[$i]));
+		}
+		return strtolower($id);
+	}
+
+	/**
+	 * Add extra headers to be added to each request
+	 *
+	 * @see http://php.net/manual/en/function.header.php
+	 *
+	 * @param array $extraHeaders
+	 */
+	public function addExtraHeaders(array $extraHeaders) {
+		$this->extraHeaders = $extraHeaders;
 	}
 
 	/**
