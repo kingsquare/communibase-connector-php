@@ -259,7 +259,7 @@ class Connector {
 		$isNew = empty($properties['_id']);
 		return $this->{$isNew ? 'doPost' : 'doPut'}(
 			$entityType . '.json/crud/' . ($isNew ? '' : $properties['_id']),
-			[],
+			array(),
 			$properties
 		);
 	}
@@ -309,12 +309,13 @@ class Connector {
 	 * @throws Exception
 	 */
 	public function getBinary($id) {
+
 		if (empty($this->apiKey)) {
 			throw new Exception('Use of connector not possible without API key', Exception::INVALID_API_KEY);
 		}
 
 		if ($this->logger) {
-			$this->logger->startQuery('File.json/binary/' . $id);
+			$this->logger->startQuery('GET File.json/binary/' . $id);
 		}
 
 		//@todo not use file_get_contents but something that is more "controllable" i.e. guzzle
@@ -336,7 +337,7 @@ class Connector {
 	 *
 	 * @throws Exception
 	 */
-	protected function doGet($path, $params = [], $data = []) {
+	protected function doGet($path, array $params = null, array $data = null) {
 		return $this->getResult('GET', $path, $params, $data);
 	}
 
@@ -349,7 +350,7 @@ class Connector {
 	 *
 	 * @throws Exception
 	 */
-	protected function doPost($path, $params = [], $data = []) {
+	protected function doPost($path, array $params = null, array $data = null) {
 		return $this->getResult('POST', $path, $params, $data);
 	}
 
@@ -362,7 +363,7 @@ class Connector {
 	 *
 	 * @throws Exception
 	 */
-	protected function doPut($path, $params = [], $data = []) {
+	protected function doPut($path, array $params = null, array $data = null) {
 		return $this->getResult('PUT', $path, $params, $data);
 	}
 
@@ -375,7 +376,7 @@ class Connector {
 	 *
 	 * @throws Exception
 	 */
-	protected function doDelete($path, $params = [], $data = []) {
+	protected function doDelete($path, array $params = null, array $data = null) {
 		return $this->getResult('DELETE', $path, $params, $data);
 	}
 
@@ -393,7 +394,7 @@ class Connector {
 	 *
 	 * @throws Exception
 	 */
-	protected function getResult($method, $path, $params = [], $data = []) {
+	protected function getResult($method, $path, array $params = null, array $data = null) {
 
 		$ch = $this->setupCurlHandle($path, $params);
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
@@ -403,7 +404,7 @@ class Connector {
 		}
 
 		if ($this->logger) {
-			$this->logger->startQuery($path, $params, $data);
+			$this->logger->startQuery($method . ' ' . $path, $params, $data);
 		}
 
 		$response = curl_exec($ch);
