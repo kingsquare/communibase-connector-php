@@ -238,7 +238,7 @@ class Connector {
 		$isNew = empty($properties['_id']);
 		$ch = $this->setupCurlHandle($entityType . '.json/crud/' . ($isNew ? '' : $properties['_id']));
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, ($isNew ? 'POST' : 'PUT'));
-		curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($properties));
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $this->jsonEncode($properties));
 		return $this->getResult($ch);
 	}
 
@@ -363,6 +363,23 @@ class Connector {
 	}
 
 	/**
+	 * Throw an exception when json_encode fails
+	 *
+	 * @param mixed $data
+	 * @return string
+	 * @throws Exception
+	 */
+	private function jsonEncode($data) {
+		$result = json_encode($data);
+
+		if ($result !== false) {
+			return $result;
+		}
+
+		throw new Exception($this->getLastJsonError() . ' (json_encode)');
+	}
+
+	/**
 	 * Parse the Communibase result and if necessary throw an exception
 	 *
 	 * @param string $response
@@ -379,8 +396,17 @@ class Connector {
 			return $result;
 		}
 
+		throw new Exception('"' . $this->getLastJsonError() . '" in ' . $response, $httpCode);
+	}
+
+	/**
+	 * Error message based on the most recent JSON error.
+	 *
+	 * @see http://nl1.php.net/manual/en/function.json-last-error.php
+	 * @return string
+	 */
+	private function getLastJsonError() {
 		$jsonLastError = json_last_error();
-		/* @see http://nl1.php.net/manual/en/function.json-last-error.php */
 		$messages = array(
 				JSON_ERROR_DEPTH => 'Maximum stack depth exceeded',
 				JSON_ERROR_STATE_MISMATCH => 'Underflow or the modes mismatch',
@@ -388,8 +414,7 @@ class Connector {
 				JSON_ERROR_SYNTAX => 'Syntax error, malformed JSON',
 				JSON_ERROR_UTF8 => 'Malformed UTF-8 characters, possibly incorrectly encoded',
 		);
-		$message = (isset($messages[$jsonLastError]) ? $messages[$jsonLastError] : 'Empty response received');
-		throw new Exception('"' . $message . '" in ' . $response, $httpCode);
+		return (isset($messages[$jsonLastError]) ? $messages[$jsonLastError] : 'Empty response received');
 	}
 
 	/**
