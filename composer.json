@@ -1,5 +1,6 @@
 {
 	"name": "kingsquare/communibase-connector-php",
+	"version": "1.1.0",
 	"description": "This is the Communibase connector for PHP.",
 	"keywords": ["communibase", "connector"],
 	"type": "library",
