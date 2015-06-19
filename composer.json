@@ -7,7 +7,8 @@
 	"license": "MIT",
 	"authors": [
 		{ "name": "Tim de Koning", "email": "tim@kingsquare.nl" },
-		{ "name": "Robin Speekenbrink", "email": "robin@kingsquare.nl" }
+		{ "name": "Robin Speekenbrink", "email": "robin@kingsquare.nl" },
+		{ "name": "Aubrey Hewes", "email": "aubrey@kingsquare.nl" }
 	],
 	"require": {
 		"php": ">=5.3",
