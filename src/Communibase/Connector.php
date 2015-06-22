@@ -400,7 +400,7 @@ class Connector {
 		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
 
 		if (!empty($data)) {
-			curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $this->jsonEncode($data));
 		}
 
 		if ($this->logger) {
@@ -479,8 +479,18 @@ class Connector {
 			return $result;
 		}
 
+		throw new Exception('"' . $this->getLastJsonError() . '" in ' . $response, $httpCode);
+	}
+
+	/**
+	 * Error message based on the most recent JSON error.
+	 *
+	 * @see http://nl1.php.net/manual/en/function.json-last-error.php
+	 *
+	 * @return string
+	 */
+	private function getLastJsonError() {
 		$jsonLastError = json_last_error();
-		/* @see http://nl1.php.net/manual/en/function.json-last-error.php */
 		$messages = array(
 				JSON_ERROR_DEPTH => 'Maximum stack depth exceeded',
 				JSON_ERROR_STATE_MISMATCH => 'Underflow or the modes mismatch',
@@ -488,8 +498,22 @@ class Connector {
 				JSON_ERROR_SYNTAX => 'Syntax error, malformed JSON',
 				JSON_ERROR_UTF8 => 'Malformed UTF-8 characters, possibly incorrectly encoded',
 		);
-		$message = (isset($messages[$jsonLastError]) ? $messages[$jsonLastError] : 'Empty response received');
-		throw new Exception('"' . $message . '" in ' . $response, $httpCode);
+		return (isset($messages[$jsonLastError]) ? $messages[$jsonLastError] : 'Empty response received');
+	}
+
+	/**
+	 * Throw an exception when json_encode fails
+	 *
+	 * @param mixed $data
+	 * @return string
+	 * @throws Exception
+	 */
+	private function jsonEncode($data) {
+		$result = json_encode($data);
+		if ($result !== false) {
+			return $result;
+		}
+		throw new Exception($this->getLastJsonError() . ' (json_encode)');
 	}
 
 	/**
