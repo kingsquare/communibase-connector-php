@@ -17,45 +17,29 @@
  * <https://communibase.nl>.
  */
 
-namespace Communibase;
+namespace Communibase\Logging;
 
 /**
- * Class Exception
- *
- * @package Communibase
- * @author Kingsquare (source@kingsquare.nl)
- * @copyright Copyright (c) Kingsquare BV (http://www.kingsquare.nl)
- * @license	 http://opensource.org/licenses/MIT The MIT License (MIT)
+ * Interface for Query loggers.
  */
-class Exception extends \Exception {
+interface QueryLogger {
 
 	/**
-	 * a defined constant when the API is is invalid (or empty)
+	 * Logs a Query somewhere.
+	 *
+	 * @param string $query The Query to be executed.
+	 * @param array|null $params The Query parameters.
+	 * @param array|null $data The Query data/payload.
+	 *
+	 * @return void
 	 */
-	const INVALID_API_KEY = 0;
+	public function startQuery($query, array $params = null, array $data = null );
 
 	/**
-	 * @var array
+	 * Marks the last started query as stopped. This can be used for timing of queries.
+	 *
+	 * @return void
 	 */
-	private $errors;
+	public function stopQuery();
 
-	/**
-	 * Overloaded to allow specific errors given by the API back to the handler
-	 * @inherit
-	 * @param null|string $message
-	 * @param int $code
-	 * @param Exception $previous
-	 * @param array $errors
-	 */
-	public function __construct($message = null, $code = 0, Exception $previous = null, array $errors = array()) {
-		$this->errors = $errors;
-		parent::__construct($message, $code, $previous);
-	}
-
-	/**
-	 * @return array
-	 */
-	public function getErrors() {
-		return $this->errors;
-	}
 }

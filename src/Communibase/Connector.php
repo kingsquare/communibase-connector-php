@@ -1,10 +1,30 @@
 <?php
+/*
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * This software consists of voluntary contributions made by many individuals
+ * and is licensed under the MIT license. For more information, see
+ * <https://communibase.nl>.
+ */
+
 namespace Communibase;
 
+use Communibase\Logging\QueryLogger;
+
 /**
- * Communibase (http://communibase.nl) data Connector for PHP
+ * Communibase (https://communibase.nl) data Connector for PHP
  *
- * For more information see http://communibase.nl
+ * For more information see https://communibase.nl
  *
  * @package Communibase
  * @author Kingsquare (source@kingsquare.nl)
@@ -42,12 +62,17 @@ class Connector {
 	private $extraHeaders;
 
 	/**
+	 * @var QueryLogger
+	 */
+	private $logger;
+
+	/**
 	 * Create a new Communibase Connector instance based on the given api-key and possible serviceUrl
 	 *
 	 * @param string $apiKey The API key for Communibase
 	 * @param string $serviceUrl The Communibase API endpoint; defaults to self::SERVICE_PRODUCTION_URL
 	 */
-	function __construct($apiKey, $serviceUrl = self::SERVICE_PRODUCTION_URL) {
+	public function __construct($apiKey, $serviceUrl = self::SERVICE_PRODUCTION_URL) {
 		$this->apiKey = $apiKey;
 		$this->serviceUrl = $serviceUrl;
 	}
@@ -88,9 +113,7 @@ class Connector {
 		if (!$this->isIdValid($id)) {
 			throw new Exception('Id is invalid, please use a correctly formatted id');
 		}
-		$ch = $this->setupCurlHandle($entityType . '.json/crud/' . $id, $params);
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-		return $this->getResult($ch);
+		return $this->doGet($entityType . '.json/crud/' . $id, $params);
 	}
 
 	/**
@@ -149,9 +172,7 @@ class Connector {
 	 * @return array|null
 	 */
 	public function getAll($entityType, $params = array()) {
-		$ch = $this->setupCurlHandle($entityType . '.json/crud/', $params);
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-		return $this->getResult($ch);
+		return $this->doGet($entityType . '.json/crud/', $params);
 	}
 
 	/**
@@ -200,11 +221,11 @@ class Connector {
 	 * @param string $id
 	 *
 	 * @return array
+	 *
+	 * @throws Exception
 	 */
 	public function getHistory($entityType, $id) {
-		$ch = $this->setupCurlHandle($entityType . '.json/history/' . $id);
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'GET');
-		return $this->getResult($ch);
+		return $this->doGet($entityType . '.json/history/' . $id);
 	}
 
 	/**
@@ -215,13 +236,11 @@ class Connector {
 	 * @param array $params (optional)
 	 *
 	 * @return array
+	 *
+	 * @throws Exception
 	 */
 	public function search($entityType, $querySelector, $params = array()) {
-		$url = $entityType . '.json/search';
-		$ch = $this->setupCurlHandle($url, $params);
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-		curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($querySelector));
-		return $this->getResult($ch);
+		return $this->doPost($entityType . '.json/search', $params, $querySelector);
 	}
 
 	/**
@@ -233,13 +252,16 @@ class Connector {
 	 * @param array $properties - the to-be-saved entity data
 	 *
 	 * @returns array resultData
+	 *
+	 * @throws Exception
 	 */
 	public function update($entityType, $properties) {
 		$isNew = empty($properties['_id']);
-		$ch = $this->setupCurlHandle($entityType . '.json/crud/' . ($isNew ? '' : $properties['_id']));
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, ($isNew ? 'POST' : 'PUT'));
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $this->jsonEncode($properties));
-		return $this->getResult($ch);
+		return $this->{$isNew ? 'doPost' : 'doPut'}(
+			$entityType . '.json/crud/' . ($isNew ? '' : $properties['_id']),
+			array(),
+			$properties
+		);
 	}
 
 	/**
@@ -251,16 +273,16 @@ class Connector {
 	 *
 	 * @param string $entityType
 	 * @param string $id
+	 *
 	 * @return array
+	 *
 	 * @throws Exception
 	 */
 	public function finalize($entityType, $id) {
 		if ($entityType !== 'Invoice') {
 			throw new Exception('Cannot call finalize on ' . $entityType);
 		}
-		$ch = $this->setupCurlHandle($entityType . '.json/finalize/' . $id);
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-		return $this->getResult($ch);
+		return $this->doPost($entityType . '.json/finalize/' . $id);
 	}
 
 	/**
@@ -272,34 +294,7 @@ class Connector {
 	 * @return array resultData
 	 */
 	public function destroy($entityType, $id) {
-		$ch = $this->setupCurlHandle($entityType . '.json/crud/' . $id);
-		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
-		return $this->getResult($ch);
-	}
-
-	/**
-	 * Generate a Communibase compatible ID, that consists of:
-	 *
-	 * a 4-byte timestamp,
-	 * a 3-byte machine identifier,
-	 * a 2-byte process id, and
-	 * a 3-byte counter, starting with a random value.
-	 *
-	 */
-	public function generateId( ) {
-		static $inc = 0;
-
-		$ts = pack('N', time());
-		$m = substr(md5(gethostname()), 0, 3);
-		$pid = pack('n', 1); //posix_getpid()
-		$trail = substr(pack('N', $inc++), 1, 3);
-
-		$bin = sprintf("%s%s%s%s", $ts, $m, $pid, $trail);
-		$id = '';
-		for ($i = 0; $i < 12; $i++) {
-			$id .= sprintf("%02X", ord($bin[$i]));
-		}
-		return strtolower($id);
+		return $this->doDelete($entityType . '.json/crud/' . $id);
 	}
 
 	/**
@@ -314,10 +309,126 @@ class Connector {
 	 * @throws Exception
 	 */
 	public function getBinary($id) {
+
 		if (empty($this->apiKey)) {
 			throw new Exception('Use of connector not possible without API key', Exception::INVALID_API_KEY);
 		}
-		return file_get_contents($this->serviceUrl . 'File.json/binary/' . $id . '?api_key=' . $this->apiKey);
+
+		if ($this->logger) {
+			$this->logger->startQuery('GET File.json/binary/' . $id);
+		}
+
+		//@todo not use file_get_contents but something that is more "controllable" i.e. guzzle
+		$result = file_get_contents($this->serviceUrl . 'File.json/binary/' . $id . '?api_key=' . $this->apiKey);
+
+		if ($this->logger) {
+			$this->logger->stopQuery();
+		}
+
+		return $result;
+	}
+
+	/**
+	 * @param string $path
+	 * @param array $params
+	 * @param array $data
+	 *
+	 * @return array
+	 *
+	 * @throws Exception
+	 */
+	protected function doGet($path, array $params = null, array $data = null) {
+		return $this->getResult('GET', $path, $params, $data);
+	}
+
+	/**
+	 * @param string $path
+	 * @param array $params
+	 * @param array $data
+	 *
+	 * @return array
+	 *
+	 * @throws Exception
+	 */
+	protected function doPost($path, array $params = null, array $data = null) {
+		return $this->getResult('POST', $path, $params, $data);
+	}
+
+	/**
+	 * @param string $path
+	 * @param array $params
+	 * @param array $data
+	 *
+	 * @return array
+	 *
+	 * @throws Exception
+	 */
+	protected function doPut($path, array $params = null, array $data = null) {
+		return $this->getResult('PUT', $path, $params, $data);
+	}
+
+	/**
+	 * @param string $path
+	 * @param array $params
+	 * @param array $data
+	 *
+	 * @return array
+	 *
+	 * @throws Exception
+	 */
+	protected function doDelete($path, array $params = null, array $data = null) {
+		return $this->getResult('DELETE', $path, $params, $data);
+	}
+
+	/**
+	 * @todo replace with guzzle? adds an extra dependency...
+	 *
+	 * Process the request
+	 *
+	 * @param string $method
+	 * @param string $path
+	 * @param array $params
+	 * @param array $data
+	 *
+	 * @return array i.e. [success => true|false, [errors => ['message' => 'this is broken', ..]]]
+	 *
+	 * @throws Exception
+	 */
+	protected function getResult($method, $path, array $params = null, array $data = null) {
+
+		$ch = $this->setupCurlHandle($path, $params);
+		curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+
+		if (!empty($data)) {
+			curl_setopt($ch, CURLOPT_POSTFIELDS, $this->jsonEncode($data));
+		}
+
+		if ($this->logger) {
+			$this->logger->startQuery($method . ' ' . $path, $params, $data);
+		}
+
+		$response = curl_exec($ch);
+
+		if ($this->logger) {
+			$this->logger->stopQuery();
+		}
+
+		if ($response === false) {
+			throw new Exception('Curl failed. ' . PHP_EOL . curl_error($ch));
+		}
+
+		$curlInfo = curl_getinfo($ch);
+		curl_close($ch);
+		$responseData = $this->parseResult($response, $curlInfo['http_code']);
+
+		if ($curlInfo['http_code'] !== 200) {
+			throw new Exception($responseData['message'],
+					$responseData['code'],
+					null,
+					(($_=& $responseData['errors']) ?: array()));
+		}
+
+		return $responseData;
 	}
 
 	/**
@@ -352,34 +463,6 @@ class Connector {
 	}
 
 	/**
-	 * Add extra headers to be added to each request
-	 *
-	 * @see http://php.net/manual/en/function.header.php
-	 *
-	 * @param array $extraHeaders
-	 */
-	public function addExtraHeaders(array $extraHeaders) {
-		$this->extraHeaders = $extraHeaders;
-	}
-
-	/**
-	 * Throw an exception when json_encode fails
-	 *
-	 * @param mixed $data
-	 * @return string
-	 * @throws Exception
-	 */
-	private function jsonEncode($data) {
-		$result = json_encode($data);
-
-		if ($result !== false) {
-			return $result;
-		}
-
-		throw new Exception($this->getLastJsonError() . ' (json_encode)');
-	}
-
-	/**
 	 * Parse the Communibase result and if necessary throw an exception
 	 *
 	 * @param string $response
@@ -403,6 +486,7 @@ class Connector {
 	 * Error message based on the most recent JSON error.
 	 *
 	 * @see http://nl1.php.net/manual/en/function.json-last-error.php
+	 *
 	 * @return string
 	 */
 	private function getLastJsonError() {
@@ -418,31 +502,18 @@ class Connector {
 	}
 
 	/**
-	 * Process the curl handle to a response
+	 * Throw an exception when json_encode fails
 	 *
-	 * @param resource $ch - Curl handle
-	 *
-	 * @return array i.e. [success => true|false, [errors => ['message' => 'this is broken', ..]]]
-	 *
+	 * @param mixed $data
+	 * @return string
 	 * @throws Exception
 	 */
-	private function getResult($ch) {
-		$response = curl_exec($ch);
-		if ($response === false) {
-			throw new Exception('Curl failed. ' . PHP_EOL . curl_error($ch));
+	private function jsonEncode($data) {
+		$result = json_encode($data);
+		if ($result !== false) {
+			return $result;
 		}
-		$curlInfo = curl_getinfo($ch);
-		curl_close($ch);
-		$responseData = $this->parseResult($response, $curlInfo['http_code']);
-
-		if ($curlInfo['http_code'] !== 200) {
-			throw new Exception($responseData['message'],
-					$responseData['code'],
-					null,
-					(($_=& $responseData['errors']) ?: array()));
-		}
-
-		return $responseData;
+		throw new Exception($this->getLastJsonError() . ' (json_encode)');
 	}
 
 	/**
@@ -450,7 +521,7 @@ class Connector {
 	 *
 	 * @return bool
 	 */
-	private function isIdValid($id) {
+	public function isIdValid($id) {
 		if (empty($id)) {
 			return false;
 		}
@@ -460,5 +531,56 @@ class Connector {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Generate a Communibase compatible ID, that consists of:
+	 *
+	 * a 4-byte timestamp,
+	 * a 3-byte machine identifier,
+	 * a 2-byte process id, and
+	 * a 3-byte counter, starting with a random value.
+	 *
+	 * @return string
+	 */
+	public function generateId( ) {
+		static $inc = 0;
+
+		$ts = pack('N', time());
+		$m = substr(md5(gethostname()), 0, 3);
+		$pid = pack('n', 1); //posix_getpid()
+		$trail = substr(pack('N', $inc++), 1, 3);
+
+		$bin = sprintf("%s%s%s%s", $ts, $m, $pid, $trail);
+		$id = '';
+		for ($i = 0; $i < 12; $i++) {
+			$id .= sprintf("%02X", ord($bin[$i]));
+		}
+		return strtolower($id);
+	}
+
+	/**
+	 * Add extra headers to be added to each request
+	 *
+	 * @see http://php.net/manual/en/function.header.php
+	 *
+	 * @param array $extraHeaders
+	 */
+	public function addExtraHeaders(array $extraHeaders) {
+		$this->extraHeaders = $extraHeaders;
+	}
+
+	/**
+	 * @param QueryLogger $logger
+	 */
+	public function setQueryLogger(QueryLogger $logger) {
+		$this->logger = $logger;
+	}
+
+	/**
+	 * @return QueryLogger
+	 */
+	public function getQueryLogger() {
+		return $this->logger;
 	}
 }
