@@ -17,45 +17,32 @@
  * <https://communibase.nl>.
  */
 
-namespace Communibase;
+namespace Communibase\Logging;
 
 /**
- * Class Exception
- *
- * @package Communibase
- * @author Kingsquare (source@kingsquare.nl)
- * @copyright Copyright (c) Kingsquare BV (http://www.kingsquare.nl)
- * @license	 http://opensource.org/licenses/MIT The MIT License (MIT)
+ * A Query logger that logs to the standard output using echo/var_dump.
  */
-class Exception extends \Exception {
+class EchoQueryLogger implements QueryLogger {
 
 	/**
-	 * a defined constant when the API is is invalid (or empty)
+	 * {@inheritdoc}
 	 */
-	const INVALID_API_KEY = 0;
+	public function startQuery($query, array $params = null, array $data = null ) {
+		echo $query . PHP_EOL;
 
-	/**
-	 * @var array
-	 */
-	private $errors;
+		if ($params) {
+			var_dump($params);
+		}
 
-	/**
-	 * Overloaded to allow specific errors given by the API back to the handler
-	 * @inherit
-	 * @param null|string $message
-	 * @param int $code
-	 * @param Exception $previous
-	 * @param array $errors
-	 */
-	public function __construct($message = null, $code = 0, Exception $previous = null, array $errors = array()) {
-		$this->errors = $errors;
-		parent::__construct($message, $code, $previous);
+		if ($data) {
+			var_dump($data);
+		}
 	}
 
 	/**
-	 * @return array
+	 * {@inheritdoc}
 	 */
-	public function getErrors() {
-		return $this->errors;
+	public function stopQuery() {
 	}
+
 }

@@ -17,45 +17,56 @@
  * <https://communibase.nl>.
  */
 
-namespace Communibase;
+namespace Communibase\Logging;
 
 /**
- * Class Exception
- *
- * @package Communibase
- * @author Kingsquare (source@kingsquare.nl)
- * @copyright Copyright (c) Kingsquare BV (http://www.kingsquare.nl)
- * @license	 http://opensource.org/licenses/MIT The MIT License (MIT)
+ * Includes executed Queries in a Debug Stack.
  */
-class Exception extends \Exception {
+class DebugStack implements QueryLogger {
 
 	/**
-	 * a defined constant when the API is is invalid (or empty)
-	 */
-	const INVALID_API_KEY = 0;
-
-	/**
+	 * Executed queries.
+	 *
 	 * @var array
 	 */
-	private $errors;
+	public $queries = array();
 
 	/**
-	 * Overloaded to allow specific errors given by the API back to the handler
-	 * @inherit
-	 * @param null|string $message
-	 * @param int $code
-	 * @param Exception $previous
-	 * @param array $errors
+	 * If Debug Stack is enabled (log queries) or not.
+	 *
+	 * @var boolean
 	 */
-	public function __construct($message = null, $code = 0, Exception $previous = null, array $errors = array()) {
-		$this->errors = $errors;
-		parent::__construct($message, $code, $previous);
+	public $enabled = true;
+
+	/**
+	 * @var float|null
+	 */
+	public $start = null;
+
+	/**
+	 * @var integer
+	 */
+	public $currentQuery = 0;
+
+	/**
+	 * {@inheritdoc}
+	 */
+	public function startQuery( $query, array $params = null, array $data = null ) {
+		if ($this->enabled) {
+			$this->start = microtime( true );
+			$this->queries[++$this->currentQuery] = array(
+				'query' => $query, 'params' => $params, 'data' => $data, 'executionMS' => 0
+			);
+		}
 	}
 
 	/**
-	 * @return array
+	 * {@inheritdoc}
 	 */
-	public function getErrors() {
-		return $this->errors;
+	public function stopQuery() {
+		if ($this->enabled) {
+			$this->queries[$this->currentQuery]['executionMS'] = microtime(true) - $this->start;
+		}
 	}
+
 }
