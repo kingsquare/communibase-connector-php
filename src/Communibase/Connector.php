@@ -154,7 +154,7 @@ class Connector {
 	 * @return array entities
 	 */
 	public function getByIds($entityType, $ids, $params = array()) {
-		$validIds = array_filter($ids, array($this, 'isIdValid'));
+        $validIds = array_values(array_unique(array_filter($ids, array($this, 'isIdValid'))));
 
 		if (empty($validIds)) {
 			return array();
