@@ -318,8 +318,10 @@ class Connector {
 			$this->logger->startQuery('GET File.json/binary/' . $id);
 		}
 
-		//@todo not use file_get_contents but something that is more "controllable" i.e. guzzle
-		$result = file_get_contents($this->serviceUrl . 'File.json/binary/' . $id . '?api_key=' . $this->apiKey);
+		$curlHandle = $this->setupCurlHandle('File.json/binary/' . $id);
+		curl_setopt($curlHandle, CURLOPT_HTTPHEADER, []);
+		$result = curl_exec($curlHandle);
+		curl_close($curlHandle);
 
 		if ($this->logger) {
 			$this->logger->stopQuery();
