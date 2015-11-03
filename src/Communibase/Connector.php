@@ -154,7 +154,7 @@ class Connector {
 	 * @return array entities
 	 */
 	public function getByIds($entityType, $ids, $params = array()) {
-        $validIds = array_values(array_unique(array_filter($ids, array($this, 'isIdValid'))));
+		$validIds = array_values(array_unique(array_filter($ids, array($this, 'isIdValid'))));
 
 		if (empty($validIds)) {
 			return array();
@@ -446,7 +446,22 @@ class Connector {
 			throw new Exception('Use of connector not possible without API key', Exception::INVALID_API_KEY);
 		}
 		if (array_key_exists('fields', $params) && is_array($params['fields'])) {
-			$params['fields'] = implode(' ', $params['fields']);
+			$fields = [];
+			foreach ($params['fields'] as $index => $field) {
+				if (!ctype_digit($index)) {
+					$fields[$index] = $field;
+					continue;
+				}
+
+				$modifier = 1;
+				$firstChar = substr($field, 0, 1);
+				if ($firstChar == '+' || $firstChar == '-') {
+					$modifier = $firstChar =='+' ? 1 : 0;
+					$field = substr($field, 1);
+				}
+				$fields[$field] = $modifier;
+			}
+			$params['fields'] = $fields;
 		}
 		$params['api_key'] = $this->apiKey;
 
