@@ -448,7 +448,7 @@ class Connector {
 		if (array_key_exists('fields', $params) && is_array($params['fields'])) {
 			$fields = [];
 			foreach ($params['fields'] as $index => $field) {
-				if (!ctype_digit($index)) {
+				if (!is_numeric($index)) {
 					$fields[$index] = $field;
 					continue;
 				}
