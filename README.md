@@ -27,7 +27,7 @@ require_once __DIR__ . '/../vendor/autoload.php'; // Autoload files using Compos
 use Communibase\Connector;
 
 $cb = new Connector('<your api key here>');
-$peopleNamedTim = $cb->search('Person', array('firstName' => 'Tim'), array('limit' => 5));
+$peopleNamedTim = $cb->search('Person', ['firstName' => 'Tim'], ['limit' => 5]);
 print_r($peopleNamedTim);
 ```
 
@@ -82,15 +82,15 @@ An entity is an associative array containing a key/value store of data in Commun
 E.g.
 
 ```
-array(
+[
 	'firstName' => 'Tim',
-	'addresses' => array(
-		array (
+	'addresses' => [
+		[
 			'street' => 'Breestraat'
 			...
-		), ...
-	)
-)
+		], ...
+	]
+]
 ```
 
 Error handling
@@ -110,15 +110,15 @@ A special type of error handling involves "Validity" errors for posted documents
 
 ```
 try {
-	$person = $cbc->update('Person', array(...));
+	$person = $cbc->update('Person', [...]);
 } catch (\Communibase\Exception $e) {
 	//get an array of errors, per property:
-	//	array(
-	//		array(
+	//	[
+	//		[
 	//			'field' => '<string>',
 	//			'message' => '<string>'
-	//		)
-	//	)
+	//		]
+	//	]
 	print_r($e->getErrors());
 }
 ```
