@@ -11,7 +11,6 @@ namespace Communibase;
  */
 class Exception extends \Exception
 {
-
     /**
      * a defined constant when the API is is invalid (or empty)
      */

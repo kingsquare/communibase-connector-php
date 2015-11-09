@@ -8,7 +8,6 @@ namespace Communibase\Test;
  */
 class DebugStackTest extends \PHPUnit_Framework_TestCase
 {
-
     /**
      *
      */

@@ -6,7 +6,6 @@ namespace Communibase\Logging;
  */
 interface QueryLogger
 {
-
     /**
      * Logs a Query somewhere.
      *

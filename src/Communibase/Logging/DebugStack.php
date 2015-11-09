@@ -6,7 +6,6 @@ namespace Communibase\Logging;
  */
 class DebugStack implements QueryLogger
 {
-
     /**
      * Executed queries.
      *

@@ -6,7 +6,6 @@ namespace Communibase\Logging;
  */
 class EchoQueryLogger implements QueryLogger
 {
-
     /**
      * {@inheritdoc}
      */

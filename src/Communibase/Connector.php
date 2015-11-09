@@ -16,7 +16,6 @@ use Psr\Http\Message\StreamInterface;
  */
 class Connector implements ConnectorInterface
 {
-
     /**
      * The official service URI; can be overridden via the constructor
      *
@@ -313,7 +312,6 @@ class Connector implements ConnectorInterface
      */
     public function getBinary($id)
     {
-
         if (empty($this->apiKey)) {
             throw new Exception('Use of connector not possible without API key', Exception::INVALID_API_KEY);
         }
@@ -657,7 +655,8 @@ class Connector implements ConnectorInterface
      *
      * @see https://github.com/guzzle/guzzle/issues/1297
      */
-    private function addHostToRequestOptions($options = []) {
+    private function addHostToRequestOptions($options = [])
+    {
         if (isset($this->extraHeaders['host'])) {
             $options['headers']['Host'] = $this->extraHeaders['host'];
         }

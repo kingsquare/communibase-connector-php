@@ -9,7 +9,6 @@ namespace Communibase;
  */
 class ConnectorTest extends \PHPUnit_Framework_TestCase
 {
-
     public function testGenerateIdIsValid()
     {
         $connector = new \Communibase\Connector('', '');

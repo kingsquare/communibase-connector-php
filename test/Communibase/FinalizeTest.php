@@ -8,7 +8,6 @@ namespace Communibase;
  */
 class FinalizeTest extends \PHPUnit_Framework_TestCase
 {
-
     /**
      * @TODO Test schould also check the reversed.
      * @expectedException Exception
