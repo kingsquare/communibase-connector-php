@@ -334,7 +334,7 @@ class Connector implements ConnectorInterface
     /**
      * Uploads the contents of the resource (this could be a file handle) to Communibase
      *
-     * @param resource $resource
+     * @param StreamInterface $resource
      * @param string $name
      * @param string $destinationPath
      * @param string $id
@@ -366,7 +366,7 @@ class Connector implements ConnectorInterface
                 $this->logger->stopQuery();
             }
 
-            return json_decode($response);
+            return json_decode($response, true);
         }
 
         return $this->doPut('File.json/crud/' . $id, [], [
