@@ -322,7 +322,7 @@ class Connector implements ConnectorInterface
             $this->logger->startQuery('GET File.json/binary/' . $id);
         }
 
-        $response = $this->getClient()->get('File.json/binary/' . $id);
+        $response = $this->getClient()->get('File.json/binary/' . $id, $this->addHostToRequestOptions());
 
         if ($this->logger) {
             $this->logger->stopQuery();
@@ -349,19 +349,21 @@ class Connector implements ConnectorInterface
             if ($this->logger) {
                 $this->logger->startQuery('POST File.json/binary/');
             }
-            $response = $this->getClient()->post('File.json/binary', [
-                    'multipart' => [
-                            [
-                                    'name' => 'File',
-                                    'filename' => $name,
-                                    'contents' => $resource
-                            ],
-                            [
-                                    'name' => 'metadata',
-                                    'contents' => json_encode($metaData),
-                            ]
+            $options = [
+                'multipart' => [
+                    [
+                        'name' => 'File',
+                        'filename' => $name,
+                        'contents' => $resource
+                    ],
+                    [
+                        'name' => 'metadata',
+                        'contents' => json_encode($metaData),
                     ]
-            ])->getBody();
+                ]
+            ];
+
+            $response = $this->getClient()->post('File.json/binary', $this->addHostToRequestOptions($options))->getBody();
             if ($this->logger) {
                 $this->logger->stopQuery();
             }
@@ -449,19 +451,18 @@ class Connector implements ConnectorInterface
     protected function getResult($method, $path, array $params = null, array $data = null)
     {
         $client = $this->getClient();
-        $requestOptions = [
-                'query' => $this->preParseParams($params),
+        $options = [
+            'query' => $this->preParseParams($params),
         ];
         if (!empty($data)) {
-            $requestOptions['json'] = $data;
+            $options['json'] = $data;
         }
-
         if ($this->logger) {
             $this->logger->startQuery($method . ' ' . $path, $params, $data);
         }
 
         /** @var \Psr\Http\Message\ResponseInterface $response */
-        $response = $client->{$method}($path, $requestOptions);
+        $response = $client->{$method}($path, $this->addHostToRequestOptions($options));
 
         if ($this->logger) {
             $this->logger->stopQuery();
@@ -608,7 +609,7 @@ class Connector implements ConnectorInterface
      */
     public function addExtraHeaders(array $extraHeaders)
     {
-        $this->extraHeaders = $extraHeaders;
+        $this->extraHeaders = array_change_key_case($extraHeaders, CASE_LOWER);
     }
 
     /**
@@ -646,5 +647,20 @@ class Connector implements ConnectorInterface
         ]);
 
         return $client;
+    }
+
+    /**
+     *
+     * Due to GuzzleHttp not passing a default host header given to the client to _every_ request made by the client
+     * we manually check to see if we need to add a hostheader to requests.
+     * When the issue is resolved the foreach can be removed (as the function might even?)
+     *
+     * @see https://github.com/guzzle/guzzle/issues/1297
+     */
+    private function addHostToRequestOptions($options = []) {
+        if (isset($this->extraHeaders['host'])) {
+            $options['headers']['Host'] = $this->extraHeaders['host'];
+        }
+        return $options;
     }
 }
