@@ -183,26 +183,18 @@ interface ConnectorInterface
      */
     public function getBinary($id);
 
-    public function updateBinary(StreamInterface $resource, $name, $destinationPath, $id = '');
-
     /**
+     * Uploads the contents of the resource (this could be a file handle) to Communibase
+     *
+     * @param StreamInterface $resource
+     * @param string $name
+     * @param string $destinationPath
      * @param string $id
      *
-     * @return bool
+     * @return array|mixed
+     * @throws Exception
      */
-    public function isIdValid($id);
-
-    /**
-     * Generate a Communibase compatible ID, that consists of:
-     *
-     * a 4-byte timestamp,
-     * a 3-byte machine identifier,
-     * a 2-byte process id, and
-     * a 3-byte counter, starting with a random value.
-     *
-     * @return string
-     */
-    public function generateId();
+    public function updateBinary(StreamInterface $resource, $name, $destinationPath, $id = '');
 
     /**
      * Add extra headers to be added to each request

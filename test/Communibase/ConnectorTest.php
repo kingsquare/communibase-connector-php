@@ -1,6 +1,10 @@
 <?php
 namespace Communibase;
 
+use GuzzleHttp\Client;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+
 /**
  * Class ConnectorTest
  *
@@ -9,20 +13,86 @@ namespace Communibase;
  */
 class ConnectorTest extends \PHPUnit_Framework_TestCase
 {
-    public function testGenerateIdIsValid()
+    /**
+     * @test
+     */
+    public function constructor()
     {
-        $connector = new \Communibase\Connector('', '');
-        $id = $connector->generateId();
-
-        $this->assertRegExp('#[0-9a-f]{24}#', $id);
+        new Connector('', '');
     }
 
     /**
+     * @test
+     */
+    public function constructorWithClient()
+    {
+        $connector = new Connector('test', '', $this->getHttpClient());
+        $this->assertInstanceOf('\Communibase\Connector', $connector);
+    }
+
+    /**
+     * @test
      * @expectedException Exception
      */
-    public function testGetBinaryWithoutApiThrowsException()
+    public function getBinary()
     {
-        $connector = new \Communibase\Connector('', '');
+        $connector = new Connector('test', '');
         $connector->getBinary('');
+    }
+
+    /**
+     * @return array
+     */
+    public function listOfIds()
+    {
+        return [
+                ['507f1f77bcf86cd799439011', true],
+                ['507f191e810c19729de860ea', true],
+                ['54b7ed2b49726734cab0570c', true],
+                ['123c', false],
+                ['t', false],
+                ['t', false],
+        ];
+    }
+
+    /**
+     * @dataProvider listOfIds
+     * @test
+     * @param $id
+     * @param $isValid
+     */
+    public function isIdValid($id, $isValid)
+    {
+        $this->assertSame($isValid, Connector::isIdValid($id));
+    }
+
+    /**
+     * @test
+     * @depends isIdValid
+     */
+    public function generateId()
+    {
+        $id = Connector::generateId();
+
+        $this->assertTrue(Connector::isIdValid($id));
+    }
+
+    /**
+     * Create a new HttpClient (as a mock)
+     * The responses can be injected thus easily reusable
+     *
+     * @see http://docs.guzzlephp.org/en/latest/testing.html
+     *
+     * @param array $responses
+     *
+     * @return Client
+     */
+    private function getHttpClient(array $responses = [])
+    {
+
+        $mock = new MockHandler($responses);
+        $handler = HandlerStack::create($mock);
+
+        return new Client(['handler' => $handler]);
     }
 }

@@ -50,15 +50,25 @@ class Connector implements ConnectorInterface
     private $logger;
 
     /**
+     * @var \GuzzleHttp\ClientInterface
+     */
+    private $client;
+
+    /**
      * Create a new Communibase Connector instance based on the given api-key and possible serviceUrl
      *
      * @param string $apiKey The API key for Communibase
      * @param string $serviceUrl The Communibase API endpoint; defaults to self::SERVICE_PRODUCTION_URL
+     * @param \GuzzleHttp\ClientInterface $client An optional GuzzleHttp Client (or Interface for mocking)
      */
-    public function __construct($apiKey, $serviceUrl = self::SERVICE_PRODUCTION_URL)
-    {
+    public function __construct(
+            $apiKey,
+            $serviceUrl = self::SERVICE_PRODUCTION_URL,
+            \GuzzleHttp\ClientInterface $client = null
+    ) {
         $this->apiKey = $apiKey;
         $this->serviceUrl = $serviceUrl;
+        $this->client = $client;
     }
 
     /**
@@ -312,8 +322,8 @@ class Connector implements ConnectorInterface
      */
     public function getBinary($id)
     {
-        if (empty($this->apiKey)) {
-            throw new Exception('Use of connector not possible without API key', Exception::INVALID_API_KEY);
+        if (!$this->isIdValid($id)) {
+            throw new Exception('Invalid $id passed. Please provide one.');
         }
 
         if ($this->logger) {
@@ -348,20 +358,21 @@ class Connector implements ConnectorInterface
                 $this->logger->startQuery('POST File.json/binary/');
             }
             $options = [
-                'multipart' => [
-                    [
-                        'name' => 'File',
-                        'filename' => $name,
-                        'contents' => $resource
-                    ],
-                    [
-                        'name' => 'metadata',
-                        'contents' => json_encode($metaData),
+                    'multipart' => [
+                            [
+                                    'name' => 'File',
+                                    'filename' => $name,
+                                    'contents' => $resource
+                            ],
+                            [
+                                    'name' => 'metadata',
+                                    'contents' => json_encode($metaData),
+                            ]
                     ]
-                ]
             ];
 
-            $response = $this->getClient()->post('File.json/binary', $this->addHostToRequestOptions($options))->getBody();
+            $response = $this->getClient()->post('File.json/binary',
+                    $this->addHostToRequestOptions($options))->getBody();
             if ($this->logger) {
                 $this->logger->stopQuery();
             }
@@ -453,7 +464,7 @@ class Connector implements ConnectorInterface
             $params = [];
         }
         $options = [
-            'query' => $this->preParseParams($params),
+                'query' => $this->preParseParams($params),
         ];
         if (!empty($data)) {
             $options['json'] = $data;
@@ -560,7 +571,7 @@ class Connector implements ConnectorInterface
      *
      * @return bool
      */
-    public function isIdValid($id)
+    public static function isIdValid($id)
     {
         if (empty($id)) {
             return false;
@@ -583,7 +594,7 @@ class Connector implements ConnectorInterface
      *
      * @return string
      */
-    public function generateId()
+    public static function generateId()
     {
         static $inc = 0;
 
@@ -635,11 +646,15 @@ class Connector implements ConnectorInterface
      */
     protected function getClient()
     {
+        if ($this->client instanceof \GuzzleHttp\ClientInterface) {
+            return $this->client;
+        }
+
         if (empty($this->apiKey)) {
             throw new Exception('Use of connector not possible without API key', Exception::INVALID_API_KEY);
         }
 
-        $client = new \GuzzleHttp\Client([
+        $this->client = new \GuzzleHttp\Client([
                 'base_uri' => $this->serviceUrl,
                 'headers' => array_merge($this->extraHeaders, [
                         'User-Agent' => 'Connector-PHP/2',
@@ -647,7 +662,7 @@ class Connector implements ConnectorInterface
                 ])
         ]);
 
-        return $client;
+        return $this->client;
     }
 
     /**
@@ -663,6 +678,7 @@ class Connector implements ConnectorInterface
         if (isset($this->extraHeaders['host'])) {
             $options['headers']['Host'] = $this->extraHeaders['host'];
         }
+
         return $options;
     }
 }
