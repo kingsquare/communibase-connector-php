@@ -449,6 +449,9 @@ class Connector implements ConnectorInterface
     protected function getResult($method, $path, array $params = null, array $data = null)
     {
         $client = $this->getClient();
+        if ($params === null) {
+            $params = [];
+        }
         $options = [
             'query' => $this->preParseParams($params),
         ];
