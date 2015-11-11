@@ -318,7 +318,7 @@ class Connector implements ConnectorInterface
      *
      * @param string $id id string for the file-entity
      *
-     * @return string Binary contents of the file.
+     * @return StreamInterface Binary contents of the file. Since the stream can be made a string this works like a charm!
      *
      * @throws Exception
      */
