@@ -2,6 +2,8 @@
 namespace Communibase;
 
 use Communibase\Logging\QueryLogger;
+use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\ClientException;
 use Psr\Http\Message\StreamInterface;
 
 /**
@@ -50,7 +52,7 @@ class Connector implements ConnectorInterface
     private $logger;
 
     /**
-     * @var \GuzzleHttp\ClientInterface
+     * @var ClientInterface
      */
     private $client;
 
@@ -59,12 +61,12 @@ class Connector implements ConnectorInterface
      *
      * @param string $apiKey The API key for Communibase
      * @param string $serviceUrl The Communibase API endpoint; defaults to self::SERVICE_PRODUCTION_URL
-     * @param \GuzzleHttp\ClientInterface $client An optional GuzzleHttp Client (or Interface for mocking)
+     * @param ClientInterface $client An optional GuzzleHttp Client (or Interface for mocking)
      */
     public function __construct(
             $apiKey,
             $serviceUrl = self::SERVICE_PRODUCTION_URL,
-            \GuzzleHttp\ClientInterface $client = null
+            ClientInterface $client = null
     ) {
         $this->apiKey = $apiKey;
         $this->serviceUrl = $serviceUrl;
@@ -83,8 +85,8 @@ class Connector implements ConnectorInterface
     public function getTemplate($entityType)
     {
         $params = [
-                'fields' => 'attributes.title',
-                'limit' => 1,
+            'fields' => 'attributes.title',
+            'limit' => 1,
         ];
         $definition = $this->search('EntityType', ['title' => $entityType], $params);
 
@@ -267,9 +269,9 @@ class Connector implements ConnectorInterface
         $isNew = empty($properties['_id']);
 
         return $this->{$isNew ? 'doPost' : 'doPut'}(
-                $entityType . '.json/crud/' . ($isNew ? '' : $properties['_id']),
-                [],
-                $properties
+            $entityType . '.json/crud/' . ($isNew ? '' : $properties['_id']),
+            [],
+            $properties
         );
     }
 
@@ -326,17 +328,7 @@ class Connector implements ConnectorInterface
             throw new Exception('Invalid $id passed. Please provide one.');
         }
 
-        if ($this->logger) {
-            $this->logger->startQuery('GET File.json/binary/' . $id);
-        }
-
-        $response = $this->getClient()->get('File.json/binary/' . $id, $this->addHostToRequestOptions());
-
-        if ($this->logger) {
-            $this->logger->stopQuery();
-        }
-
-        return $response->getBody();
+        return $this->call('get', ['File.json/binary/' . $id])->getBody();
     }
 
     /**
@@ -354,30 +346,23 @@ class Connector implements ConnectorInterface
     {
         $metaData = ['path' => $destinationPath];
         if (empty($id)) {
-            if ($this->logger) {
-                $this->logger->startQuery('POST File.json/binary/');
-            }
             $options = [
-                    'multipart' => [
-                            [
-                                    'name' => 'File',
-                                    'filename' => $name,
-                                    'contents' => $resource
-                            ],
-                            [
-                                    'name' => 'metadata',
-                                    'contents' => json_encode($metaData),
-                            ]
+                'multipart' => [
+                    [
+                        'name' => 'File',
+                        'filename' => $name,
+                        'contents' => $resource
+                    ],
+                    [
+                        'name' => 'metadata',
+                        'contents' => json_encode($metaData),
                     ]
+                ]
             ];
 
-            $response = $this->getClient()->post('File.json/binary',
-                    $this->addHostToRequestOptions($options))->getBody();
-            if ($this->logger) {
-                $this->logger->stopQuery();
-            }
+            $response = $this->call('post', ['File.json/binary', $options]);
 
-            return json_decode($response, true);
+            return $this->parseResult($response->getBody(), $response->getStatusCode());
         }
 
         return $this->doPut('File.json/crud/' . $id, [], [
@@ -459,34 +444,26 @@ class Connector implements ConnectorInterface
      */
     protected function getResult($method, $path, array $params = null, array $data = null)
     {
-        $client = $this->getClient();
         if ($params === null) {
             $params = [];
         }
         $options = [
-                'query' => $this->preParseParams($params),
+            'query' => $this->preParseParams($params),
         ];
         if (!empty($data)) {
             $options['json'] = $data;
         }
-        if ($this->logger) {
-            $this->logger->startQuery($method . ' ' . $path, $params, $data);
-        }
 
-        /** @var \Psr\Http\Message\ResponseInterface $response */
-        $response = $client->{$method}($path, $this->addHostToRequestOptions($options));
+        $response = $this->call($method, [$path, $options]);
 
-        if ($this->logger) {
-            $this->logger->stopQuery();
-        }
         $responseData = $this->parseResult($response->getBody(), $response->getStatusCode());
 
         if ($response->getStatusCode() !== 200) {
             throw new Exception(
-                    $responseData['message'],
-                    $responseData['code'],
-                    null,
-                    (($_ =& $responseData['errors']) ?: [])
+                $responseData['message'],
+                $responseData['code'],
+                null,
+                (($_ =& $responseData['errors']) ?: [])
             );
         }
 
@@ -646,7 +623,7 @@ class Connector implements ConnectorInterface
      */
     protected function getClient()
     {
-        if ($this->client instanceof \GuzzleHttp\ClientInterface) {
+        if ($this->client instanceof ClientInterface) {
             return $this->client;
         }
 
@@ -655,30 +632,62 @@ class Connector implements ConnectorInterface
         }
 
         $this->client = new \GuzzleHttp\Client([
-                'base_uri' => $this->serviceUrl,
-                'headers' => array_merge($this->extraHeaders, [
-                        'User-Agent' => 'Connector-PHP/2',
-                        'X-Api-Key' => $this->apiKey,
-                ])
+            'base_uri' => $this->serviceUrl,
+            'headers' => array_merge($this->extraHeaders, [
+                'User-Agent' => 'Connector-PHP/2',
+                'X-Api-Key' => $this->apiKey,
+            ])
         ]);
 
         return $this->client;
     }
 
     /**
+     * @param string $method
+     * @param array $arguments
      *
-     * Due to GuzzleHttp not passing a default host header given to the client to _every_ request made by the client
-     * we manually check to see if we need to add a hostheader to requests.
-     * When the issue is resolved the foreach can be removed (as the function might even?)
-     *
-     * @see https://github.com/guzzle/guzzle/issues/1297
+     * @return \Psr\Http\Message\ResponseInterface
+     * @throws Exception
      */
-    private function addHostToRequestOptions($options = [])
+    private function call($method, array $arguments)
     {
-        if (isset($this->extraHeaders['host'])) {
-            $options['headers']['Host'] = $this->extraHeaders['host'];
-        }
+        try {
 
-        return $options;
+            /**
+             * Due to GuzzleHttp not passing a default host header given to the client to _every_ request made by the client
+             * we manually check to see if we need to add a hostheader to requests.
+             * When the issue is resolved the foreach can be removed (as the function might even?)
+             *
+             * @see https://github.com/guzzle/guzzle/issues/1297
+             */
+            if (!empty($arguments[1]) && isset($this->extraHeaders['host'])) {
+                $arguments[1]['headers']['Host'] = $this->extraHeaders['host'];
+            }
+
+            if ($this->logger) {
+                $this->logger->startQuery($method . ' ' . reset($arguments), $arguments);
+            }
+
+           $response = call_user_func_array([$this->getClient(), $method], $arguments);
+
+            if ($this->logger) {
+                $this->logger->stopQuery();
+            }
+
+            return $response;
+
+        // try to catch the Guzzle client exception (404's, validation errors etc) and wrap them into a CB exception
+        } catch (ClientException $e) {
+
+            $response = json_decode($e->getResponse()->getBody(), true);
+
+            throw new Exception(
+                    $response['message'],
+                    $response['code'],
+                    $e,
+                    (($_ =& $response['errors']) ?: [])
+            );
+
+        }
     }
 }

@@ -27,10 +27,10 @@ class Exception extends \Exception
      *
      * @param null|string $message
      * @param int $code
-     * @param Exception $previous
+     * @param \Exception $previous
      * @param array $errors
      */
-    public function __construct($message = null, $code = 0, Exception $previous = null, array $errors = [])
+    public function __construct($message = null, $code = 0, \Exception $previous = null, array $errors = [])
     {
         $this->errors = $errors;
         parent::__construct($message, $code, $previous);
