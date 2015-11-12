@@ -660,7 +660,7 @@ class Connector implements ConnectorInterface
              *
              * @see https://github.com/guzzle/guzzle/issues/1297
              */
-            if (!empty($arguments[1]) && isset($this->extraHeaders['host'])) {
+            if (isset($this->extraHeaders['host'])) {
                 $arguments[1]['headers']['Host'] = $this->extraHeaders['host'];
             }
 
