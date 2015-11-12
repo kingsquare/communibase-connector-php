@@ -152,7 +152,7 @@ Also we welcome new features and code, so please don't hesitate to get that pull
 
 ## Changelog
 
-* 2.2.0 Exceptions: gotta catch 'em all! (unreleased / BETA)
+* 2.2.0 Exceptions: gotta catch 'em all!
 
     We're building towards better exception handling and as such have moved all outside calls into a single method.
     This simplifies the logging and HOST-header modifications to a single location. This also prevents code duplication
