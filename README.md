@@ -152,6 +152,12 @@ Also we welcome new features and code, so please don't hesitate to get that pull
 
 ## Changelog
 
+* 2.2.0 Exceptions: gotta catch 'em all! (unreleased / BETA)
+
+    We're building towards better exception handling and as such have moved all outside calls into a single method.
+    This simplifies the logging and HOST-header modifications to a single location. This also prevents code duplication
+    for the client calls.
+
 * 2.1.0 Dependency injection
 
     After the initial moving to Guzzle we decided to change the contstructor of the connector to allow injecting a client.
