@@ -162,7 +162,20 @@ class Connector implements ConnectorInterface
             return [];
         }
 
-        return $this->search($entityType, ['_id' => ['$in' => $validIds]], $params);
+        $doSortByIds = empty($params['sort']);
+        $results = $this->search($entityType, ['_id' => ['$in' => $validIds]], $params);
+        if (!$doSortByIds) {
+            return $results;
+        }
+
+        $flipped = array_flip($validIds);
+        foreach ($results as $result) {
+            $flipped[$result['_id']] = $result;
+        }
+        return array_filter(array_values($flipped), function ($result) {
+            return is_array($result) && !empty($result);
+        });
+
     }
 
     /**
