@@ -42,7 +42,10 @@ API
 "params" is a key value store for e.g. fields, limit, page and/or sort . See [API docs](https://api.communibase.nl/docs/) for more details. In addition to the nodeJS version of this parameter, the fields value may also be an array of fields. This will work more intuitively in PHP environments.
 
 
-#### Sync
+#### Async usage
+
+Returns a [Promise](https://github.com/guzzle/promise) 
+
 
 ```
 
@@ -75,35 +78,35 @@ $cbc->getBinary(id): string;
 
 ```
 
-#### Async Usage
+#### Sync Usage
 
-Appending `Async` to the method returns a [Promise](https://github.com/guzzle/promise) result.
+Appending `Sync` to the method returns the result.
 
 
 ```
 
-$cbc->searchAsync($entityType, $selector, $params): entity[];
+$cbc->searchSync($entityType, $selector, $params): entity[];
 
-$cbc->getAllAsync($entityType, $params): entity[];
+$cbc->getAllSync($entityType, $params): entity[];
 
-$cbc->getByIdAsync($entityType, $id, $params): entity;
+$cbc->getByIdSync($entityType, $id, $params): entity;
 
-$cbc->getByIdsAsync($entityType, $ids, $params): entity[];
+$cbc->getByIdsSync($entityType, $ids, $params): entity[];
 
-$cbc->getIdAsync($entityType, $selector): string;
+$cbc->getIdSync($entityType, $selector): string;
 
-$cbc->getIdsAsync($entityType, $selector, $params): null|string[];
+$cbc->getIdsSync($entityType, $selector, $params): null|string[];
 
-$cbc->getTemplateAsync($entityType): array;
+$cbc->getTemplateSync($entityType): array;
 
-$cbc->getHistoryAsync($entityType, $id): array;
+$cbc->getHistorySync($entityType, $id): array;
 
-$cbc->updateAsync($entityType, $properties): responseData;
+$cbc->updateSync($entityType, $properties): responseData;
 
-$cbc->destroyAsync($entityType, $id): responseData;
+$cbc->destroySync($entityType, $id): responseData;
 
 //Use for Files only to get a string with the binary contents
-$cbc->getBinaryAsync(id): string;
+$cbc->getBinarySync(id): string;
 
 ```
 
