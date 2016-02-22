@@ -41,6 +41,12 @@ API
 
 "params" is a key value store for e.g. fields, limit, page and/or sort . See [API docs](https://api.communibase.nl/docs/) for more details. In addition to the nodeJS version of this parameter, the fields value may also be an array of fields. This will work more intuitively in PHP environments.
 
+
+#### Async usage
+
+Returns a [Promise](https://github.com/guzzle/promise) 
+
+
 ```
 
 $cbc->search($entityType, $selector, $params): entity[];
@@ -69,6 +75,38 @@ $cbc->generateId(): string - Generate a new, fresh Communibase ID
 
 //Use for Files only to get a string with the binary contents
 $cbc->getBinary(id): string;
+
+```
+
+#### Sync Usage
+
+Appending `Sync` to the method returns the result.
+
+
+```
+
+$cbc->searchSync($entityType, $selector, $params): entity[];
+
+$cbc->getAllSync($entityType, $params): entity[];
+
+$cbc->getByIdSync($entityType, $id, $params): entity;
+
+$cbc->getByIdsSync($entityType, $ids, $params): entity[];
+
+$cbc->getIdSync($entityType, $selector): string;
+
+$cbc->getIdsSync($entityType, $selector, $params): null|string[];
+
+$cbc->getTemplateSync($entityType): array;
+
+$cbc->getHistorySync($entityType, $id): array;
+
+$cbc->updateSync($entityType, $properties): responseData;
+
+$cbc->destroySync($entityType, $id): responseData;
+
+//Use for Files only to get a string with the binary contents
+$cbc->getBinarySync(id): string;
 
 ```
 
@@ -151,6 +189,10 @@ If you're using this app and have questions and/or feedback, please file an issu
 Also we welcome new features and code, so please don't hesitate to get that pull request online!
 
 ## Changelog
+
+* 3.0.0
+
+    * promisified via {method}Async, {method} is delegated to {method}Async and waited
 
 * 2.2.1 bugfix
 

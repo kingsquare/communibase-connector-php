@@ -2,6 +2,7 @@
 namespace Communibase;
 
 use Communibase\Logging\QueryLogger;
+use GuzzleHttp\Promise\Promise;
 use Psr\Http\Message\StreamInterface;
 
 /**
@@ -21,7 +22,7 @@ interface ConnectorInterface
      *
      * @param string $entityType
      *
-     * @return array
+     * @return Promise of result
      *
      * @throws Exception
      */
@@ -34,7 +35,7 @@ interface ConnectorInterface
      * @param string $id
      * @param array $params (optional)
      *
-     * @return array entity
+     * @return Promise of result
      *
      * @throws Exception
      */
@@ -46,7 +47,7 @@ interface ConnectorInterface
      * @param string $ref
      * @param array $parentEntity (optional)
      *
-     * @return array the referred Entity data
+     * @return Promise of result
      *
      * @throws Exception
      */
@@ -59,7 +60,7 @@ interface ConnectorInterface
      * @param array $ids
      * @param array $params (optional)
      *
-     * @return array entities
+     * @return Promise of result
      */
     public function getByIds($entityType, array $ids, array $params = []);
 
@@ -69,7 +70,7 @@ interface ConnectorInterface
      * @param string $entityType
      * @param array $params (optional)
      *
-     * @return array|null
+     * @return Promise of result
      */
     public function getAll($entityType, array $params = []);
 
@@ -80,7 +81,7 @@ interface ConnectorInterface
      * @param array $selector (optional)
      * @param array $params (optional)
      *
-     * @return array
+     * @return Promise of result
      */
     public function getIds($entityType, array $selector = [], array $params = []);
 
@@ -90,7 +91,7 @@ interface ConnectorInterface
      * @param string $entityType i.e. Person
      * @param array $selector (optional) i.e. ['firstName' => 'Henk']
      *
-     * @return array resultData
+     * @return Promise of result
      */
     public function getId($entityType, array $selector = []);
 
@@ -111,7 +112,7 @@ interface ConnectorInterface
      * @param string $entityType
      * @param string $id
      *
-     * @return array
+     * @return Promise of result
      *
      * @throws Exception
      */
@@ -124,7 +125,7 @@ interface ConnectorInterface
      * @param array $querySelector
      * @param array $params (optional)
      *
-     * @return array
+     * @return Promise of result
      *
      * @throws Exception
      */
@@ -138,7 +139,7 @@ interface ConnectorInterface
      * @param string $entityType
      * @param array $properties - the to-be-saved entity data
      *
-     * @returns array resultData
+     * @return Promise of result
      *
      * @throws Exception
      */
@@ -154,7 +155,7 @@ interface ConnectorInterface
      * @param string $entityType
      * @param string $id
      *
-     * @return array
+     * @return Promise of result
      *
      * @throws Exception
      */
@@ -166,7 +167,7 @@ interface ConnectorInterface
      * @param string $entityType
      * @param string $id
      *
-     * @return array resultData
+     * @return Promise of result
      */
     public function destroy($entityType, $id);
 
@@ -191,7 +192,8 @@ interface ConnectorInterface
      * @param string $destinationPath
      * @param string $id
      *
-     * @return array|mixed
+     * @return Promise of result
+     *
      * @throws Exception
      */
     public function updateBinary(StreamInterface $resource, $name, $destinationPath, $id = '');
