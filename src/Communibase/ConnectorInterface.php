@@ -2,6 +2,7 @@
 namespace Communibase;
 
 use Communibase\Logging\QueryLogger;
+use GuzzleHttp\Promise\Promise;
 use Psr\Http\Message\StreamInterface;
 
 /**
@@ -21,11 +22,11 @@ interface ConnectorInterface
      *
      * @param string $entityType
      *
-     * @return array
+     * @return Promise of result
      *
      * @throws Exception
      */
-    public function getTemplateAsync($entityType);
+    public function getTemplate($entityType);
 
     /**
      * Get a single Entity by its id
@@ -34,11 +35,11 @@ interface ConnectorInterface
      * @param string $id
      * @param array $params (optional)
      *
-     * @return array entity
+     * @return Promise of result
      *
      * @throws Exception
      */
-    public function getByIdAsync($entityType, $id, array $params = []);
+    public function getById($entityType, $id, array $params = []);
 
     /**
      * Get a single Entity by a ref-string
@@ -46,7 +47,7 @@ interface ConnectorInterface
      * @param string $ref
      * @param array $parentEntity (optional)
      *
-     * @return array the referred Entity data
+     * @return Promise of result
      *
      * @throws Exception
      */
@@ -59,9 +60,9 @@ interface ConnectorInterface
      * @param array $ids
      * @param array $params (optional)
      *
-     * @return array entities
+     * @return Promise of result
      */
-    public function getByIdsAsync($entityType, array $ids, array $params = []);
+    public function getByIds($entityType, array $ids, array $params = []);
 
     /**
      * Get all entities of a certain type
@@ -69,9 +70,9 @@ interface ConnectorInterface
      * @param string $entityType
      * @param array $params (optional)
      *
-     * @return array|null
+     * @return Promise of result
      */
-    public function getAllAsync($entityType, array $params = []);
+    public function getAll($entityType, array $params = []);
 
     /**
      * Get result entityIds of a certain search
@@ -80,9 +81,9 @@ interface ConnectorInterface
      * @param array $selector (optional)
      * @param array $params (optional)
      *
-     * @return array
+     * @return Promise of result
      */
-    public function getIdsAsync($entityType, array $selector = [], array $params = []);
+    public function getIds($entityType, array $selector = [], array $params = []);
 
     /**
      * Get the id of an entity based on a search
@@ -90,9 +91,9 @@ interface ConnectorInterface
      * @param string $entityType i.e. Person
      * @param array $selector (optional) i.e. ['firstName' => 'Henk']
      *
-     * @return array resultData
+     * @return Promise of result
      */
-    public function getIdAsync($entityType, array $selector = []);
+    public function getId($entityType, array $selector = []);
 
     /**
      * Returns an array of the history for the entity with the following format:
@@ -111,11 +112,11 @@ interface ConnectorInterface
      * @param string $entityType
      * @param string $id
      *
-     * @return array
+     * @return Promise of result
      *
      * @throws Exception
      */
-    public function getHistoryAsync($entityType, $id);
+    public function getHistory($entityType, $id);
 
     /**
      * Search for the given entity by optional passed selector/params
@@ -124,11 +125,11 @@ interface ConnectorInterface
      * @param array $querySelector
      * @param array $params (optional)
      *
-     * @return array
+     * @return Promise of result
      *
      * @throws Exception
      */
-    public function searchAsync($entityType, array $querySelector, array $params = []);
+    public function search($entityType, array $querySelector, array $params = []);
 
     /**
      * This will save an entity in Communibase. When a _id-field is found, this entity will be updated
@@ -138,11 +139,11 @@ interface ConnectorInterface
      * @param string $entityType
      * @param array $properties - the to-be-saved entity data
      *
-     * @returns array resultData
+     * @return Promise of result
      *
      * @throws Exception
      */
-    public function updateAsync($entityType, array $properties);
+    public function update($entityType, array $properties);
 
     /**
      * Finalize an invoice by adding an invoiceNumber to it.
@@ -154,11 +155,11 @@ interface ConnectorInterface
      * @param string $entityType
      * @param string $id
      *
-     * @return array
+     * @return Promise of result
      *
      * @throws Exception
      */
-    public function finalizeAsync($entityType, $id);
+    public function finalize($entityType, $id);
 
     /**
      * Delete something from Communibase
@@ -166,9 +167,9 @@ interface ConnectorInterface
      * @param string $entityType
      * @param string $id
      *
-     * @return array resultData
+     * @return Promise of result
      */
-    public function destroyAsync($entityType, $id);
+    public function destroy($entityType, $id);
 
     /**
      * Get the binary contents of a file by its ID
@@ -181,7 +182,7 @@ interface ConnectorInterface
      *
      * @throws Exception
      */
-    public function getBinaryAsync($id);
+    public function getBinary($id);
 
     /**
      * Uploads the contents of the resource (this could be a file handle) to Communibase
@@ -191,10 +192,11 @@ interface ConnectorInterface
      * @param string $destinationPath
      * @param string $id
      *
-     * @return array|mixed
+     * @return Promise of result
+     *
      * @throws Exception
      */
-    public function updateBinaryAsync(StreamInterface $resource, $name, $destinationPath, $id = '');
+    public function updateBinary(StreamInterface $resource, $name, $destinationPath, $id = '');
 
     /**
      * Add extra headers to be added to each request

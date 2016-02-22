@@ -13,15 +13,15 @@ use Psr\Http\Message\StreamInterface;
  *
  * For more information see https://communibase.nl
  *
- * Following are IDE hints for non-async method versions:
+ * Following are IDE hints for sync method versions:
  *
- * @method string getTemplate(string $entityType) Returns all the fields according to the definition.
- * @method array getById(string $entityType, string $id) Get an entity by id
- * @method array getByIds(string $entityType, array $ids, array $params = []) Get an array of entities by their ids
- * @method array getAll(string $entityType, array $params) Get all entities of a certain type
- * @method array getId(string $entityType, array $selector) Get the id of an entity based on a search
- * @method array getHistory(string $entityType, string $id) Returns an array of the history for the entity
- * @method array destroy(string $entityType, string $id) Delete something from Communibase
+ * @method string getTemplateSync(string $entityType) Returns all the fields according to the definition.
+ * @method array getByIdSync(string $entityType, string $id) Get an entity by id
+ * @method array getByIdsSync(string $entityType, array $ids, array $params = []) Get an array of entities by their ids
+ * @method array getAllSync(string $entityType, array $params) Get all entities of a certain type
+ * @method array getIdSync(string $entityType, array $selector) Get the id of an entity based on a search
+ * @method array getHistorySync(string $entityType, string $id) Returns an array of the history for the entity
+ * @method array destroySync(string $entityType, string $id) Delete something from Communibase
  *
  * @package Communibase
  * @author Kingsquare (source@kingsquare.nl)
@@ -94,14 +94,14 @@ class Connector implements ConnectorInterface
      *
      * @throws Exception
      */
-    public function getTemplateAsync($entityType)
+    public function getTemplate($entityType)
     {
         $params = [
             'fields' => 'attributes.title',
             'limit' => 1,
         ];
 
-        return $this->searchAsync('EntityType', ['title' => $entityType], $params)->then(function ($definition) {
+        return $this->search('EntityType', ['title' => $entityType], $params)->then(function ($definition) {
             return array_fill_keys(array_merge(['_id'], array_column($definition[0]['attributes'], 'title')), null);
         });
     }
@@ -117,7 +117,7 @@ class Connector implements ConnectorInterface
      *
      * @throws Exception
      */
-    public function getByIdAsync($entityType, $id, array $params = [])
+    public function getById($entityType, $id, array $params = [])
     {
         if (empty($id)) {
             throw new Exception('Id is empty');
@@ -169,7 +169,7 @@ class Connector implements ConnectorInterface
      *
      * @return Promise of result
      */
-    public function getByIdsAsync($entityType, array $ids, array $params = [])
+    public function getByIds($entityType, array $ids, array $params = [])
     {
         $validIds = array_values(array_unique(array_filter($ids, [$this, 'isIdValid'])));
 
@@ -179,7 +179,7 @@ class Connector implements ConnectorInterface
 
         $doSortByIds = empty($params['sort']);
 
-        return $this->searchAsync($entityType, ['_id' => ['$in' => $validIds]], $params)->then(function ($results) use ($doSortByIds, $validIds) {
+        return $this->search($entityType, ['_id' => ['$in' => $validIds]], $params)->then(function ($results) use ($doSortByIds, $validIds) {
             if (!$doSortByIds) {
                 return $results;
             }
@@ -202,7 +202,7 @@ class Connector implements ConnectorInterface
      *
      * @return Promise of result
      */
-    public function getAllAsync($entityType, array $params = [])
+    public function getAll($entityType, array $params = [])
     {
         return $this->doGet($entityType . '.json/crud/', $params);
     }
@@ -216,7 +216,7 @@ class Connector implements ConnectorInterface
      *
      * @return Promise of result
      */
-    public function getIdsAsync($entityType, array $selector = [], array $params = [])
+    public function getIds($entityType, array $selector = [], array $params = [])
     {
         $params['fields'] = '_id';
 
@@ -233,7 +233,7 @@ class Connector implements ConnectorInterface
      *
      * @return Promise of result
      */
-    public function getIdAsync($entityType, array $selector = [])
+    public function getId($entityType, array $selector = [])
     {
         $params = ['limit' => 1];
         $ids = (array)$this->getIds($entityType, $selector, $params);
@@ -262,7 +262,7 @@ class Connector implements ConnectorInterface
      *
      * @throws Exception
      */
-    public function getHistoryAsync($entityType, $id)
+    public function getHistory($entityType, $id)
     {
         return $this->doGet($entityType . '.json/history/' . $id);
     }
@@ -278,7 +278,7 @@ class Connector implements ConnectorInterface
      *
      * @throws Exception
      */
-    public function searchAsync($entityType, array $querySelector, array $params = [])
+    public function search($entityType, array $querySelector, array $params = [])
     {
         return $this->doPost($entityType . '.json/search', $params, $querySelector);
     }
@@ -295,7 +295,7 @@ class Connector implements ConnectorInterface
      *
      * @throws Exception
      */
-    public function updateAsync($entityType, array $properties)
+    public function update($entityType, array $properties)
     {
         $isNew = empty($properties['_id']);
 
@@ -320,7 +320,7 @@ class Connector implements ConnectorInterface
      *
      * @throws Exception
      */
-    public function finalizeAsync($entityType, $id)
+    public function finalize($entityType, $id)
     {
         if ($entityType !== 'Invoice') {
             throw new Exception('Cannot call finalize on ' . $entityType);
@@ -337,7 +337,7 @@ class Connector implements ConnectorInterface
      *
      * @return Promise of result
      */
-    public function destroyAsync($entityType, $id)
+    public function destroy($entityType, $id)
     {
         return $this->doDelete($entityType . '.json/crud/' . $id);
     }
@@ -353,7 +353,7 @@ class Connector implements ConnectorInterface
      *
      * @throws Exception
      */
-    public function getBinaryAsync($id)
+    public function getBinary($id)
     {
         if (!$this->isIdValid($id)) {
             throw new Exception('Invalid $id passed. Please provide one.');
@@ -375,7 +375,7 @@ class Connector implements ConnectorInterface
      * @return array|mixed
      * @throws Exception
      */
-    public function updateBinaryAsync(StreamInterface $resource, $name, $destinationPath, $id = '')
+    public function updateBinary(StreamInterface $resource, $name, $destinationPath, $id = '')
     {
         $metaData = ['path' => $destinationPath];
         if (empty($id)) {
@@ -418,13 +418,15 @@ class Connector implements ConnectorInterface
      */
     public function __call($name, $arguments)
     {
-        $async = $name . 'Async';
-        if (is_callable([$this, $async])) {
-            $promise = call_user_func_array([$this, $async], $arguments);
+        if (preg_match('#(.*)Sync$#', $name, $matches)) {
+            if (is_callable([$this, $matches[1]])) {
+                $promise = call_user_func_array([$this, $matches[1]], $arguments);
 
-            /* @var Promise $promise */
-            return $promise->wait();
+                /* @var Promise $promise */
+                return $promise->wait();
+            }
         }
+        return null;
     }
 
     /**

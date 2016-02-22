@@ -14,18 +14,18 @@ class SyncTest extends \PHPUnit_Framework_TestCase
     /**
      * @test
      */
-    public function testSync()
+    public function sync()
     {
-        $result = $this->getMockConnector()->getById('Person', $this->getMockConnector()->generateId());
+        $result = $this->getMockConnector()->getByIdSync('Person', $this->getMockConnector()->generateId());
         $this->assertSame([], $result);
     }
 
     /**
      * @test
      */
-    public function testAsync()
+    public function async()
     {
-        $this->getMockConnector()->getByIdAsync('Person', $this->getMockConnector()->generateId())->then(function ($result) {
+        $this->getMockConnector()->getById('Person', $this->getMockConnector()->generateId())->then(function ($result) {
             $this->assertSame([], $result);
         })->wait(); // wait to complete the test ;-)
     }
@@ -33,15 +33,16 @@ class SyncTest extends \PHPUnit_Framework_TestCase
     /**
      * @return \Communibase\Connector
      */
-    protected function getMockConnector() {
+    protected function getMockConnector()
+    {
         $mock = $this->getMockBuilder('Communibase\Connector')
-                ->setMethods(['getResult'])
-                ->disableOriginalConstructor()
-                ->getMock();
+                     ->setMethods(['getResult'])
+                     ->disableOriginalConstructor()
+                     ->getMock();
 
         $mock->expects($this->any())
-            ->method('getResult')
-            ->will($this->returnValue(new FulfilledPromise([])));
+             ->method('getResult')
+             ->will($this->returnValue(new FulfilledPromise([])));
 
         return $mock;
     }
