@@ -117,9 +117,19 @@ class Connector implements ConnectorInterface
     }
 
     /**
-     * Get a single Entity by a ref-string
+     * Get a single object by a DocumentReference-object. A DocumentReference object looks like
+     * {
+     *	rootDocumentId: '524aca8947bd91000600000c',
+     *	rootDocumentEntityType: 'Person',
+     *	path: [
+     *		{
+     *			field: 'addresses',
+     *			objectId: '53440792463cda7161000003'
+     *		}, ...
+     *	]
+     * }
      *
-     * @param string $ref
+     * @param array $ref
      * @param array $parentEntity (optional)
      *
      * @return array the referred Entity data
@@ -128,21 +138,57 @@ class Connector implements ConnectorInterface
      */
     public function getByRef($ref, array $parentEntity = [])
     {
-        $refParts = explode('.', $ref);
-        if ($refParts[0] !== 'parent') {
-            $entityParts = explode('|', $refParts[0]);
-            $parentEntity = $this->getById($entityParts[0], $entityParts[1]);
+
+        if (empty($ref) || empty($ref['rootDocumentEntityType'])
+                || (empty($ref['rootDocumentId']) && empty($parentEntity))) {
+            throw new Exception('Please provide a documentReference object with a type and id');
         }
-        if (empty($refParts[1])) {
+
+        $rootDocumentEntityTypeParts = explode('.', $ref['rootDocumentEntityType']);
+        if (empty($rootDocumentEntityTypeParts) || $rootDocumentEntityTypeParts[0] !== 'parent') {
+            $parentEntity = $this->getById($ref['rootDocumentEntityType'], $ref['rootDocumentId']);
+        }
+
+        if (empty($ref['path']) || empty($ref['path'][0]['field'])) {
             return $parentEntity;
         }
-        $propertyParts = explode('|', $refParts[1]);
-        foreach ($parentEntity[$propertyParts[0]] as $subEntity) {
-            if ($subEntity['_id'] === $propertyParts[1]) {
-                return $subEntity;
+
+        $nibble = $parentEntity;
+        foreach ($ref['path'] as $path) {
+
+            if (!isset($nibble[$path['field']])) {
+                break;
+            }
+
+            $nibble = $nibble[$path['field']];
+
+            // path points to an attribute
+            if (!is_array($nibble)) {
+                return $nibble;
+            }
+
+            // path points to an object
+            if (isset($nibble[$path['field']]['_id']) && isset($path['objectId'])) {
+                if ($nibble[$path['field']]['_id'] === $path['objectId']) {
+                    return $nibble[$path['field']]['_id'];
+                }
+            }
+
+            // check if it is assoc
+            $keys = array_keys($nibble);
+            // If the array keys of the keys match the keys, then the array must not be associative.
+            if (array_keys($keys) !== $keys) {
+                continue;
+            }
+
+            foreach ($nibble as $subEntity) {
+                if ($subEntity['_id'] === $path['objectId']) {
+                    return $subEntity;
+                }
             }
         }
-        throw new Exception('Could not find the referred Entity');
+
+        throw new Exception('The referred object within it\'s parent could not be found');
     }
 
     /**
