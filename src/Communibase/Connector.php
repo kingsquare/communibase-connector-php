@@ -4,12 +4,24 @@ namespace Communibase;
 use Communibase\Logging\QueryLogger;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Promise\Promise;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
 
 /**
  * Communibase (https://communibase.nl) data Connector for PHP
  *
  * For more information see https://communibase.nl
+ *
+ * Following are IDE hints for non-async method versions:
+ *
+ * @method string getTemplate(string $entityType) Returns all the fields according to the definition.
+ * @method array getById(string $entityType, string $id) Get an entity by id
+ * @method array getByIds(string $entityType, array $ids, array $params = []) Get an array of entities by their ids
+ * @method array getAll(string $entityType, array $params) Get all entities of a certain type
+ * @method array getId(string $entityType, array $selector) Get the id of an entity based on a search
+ * @method array getHistory(string $entityType, string $id) Returns an array of the history for the entity
+ * @method array destroy(string $entityType, string $id) Delete something from Communibase
  *
  * @package Communibase
  * @author Kingsquare (source@kingsquare.nl)
@@ -78,19 +90,20 @@ class Connector implements ConnectorInterface
      *
      * @param string $entityType
      *
-     * @return array
+     * @return Promise of result
      *
      * @throws Exception
      */
-    public function getTemplate($entityType)
+    public function getTemplateAsync($entityType)
     {
         $params = [
             'fields' => 'attributes.title',
             'limit' => 1,
         ];
-        $definition = $this->search('EntityType', ['title' => $entityType], $params);
 
-        return array_fill_keys(array_merge(['_id'], array_column($definition[0]['attributes'], 'title')), null);
+        return $this->searchAsync('EntityType', ['title' => $entityType], $params)->then(function ($definition) {
+            return array_fill_keys(array_merge(['_id'], array_column($definition[0]['attributes'], 'title')), null);
+        });
     }
 
     /**
@@ -100,11 +113,11 @@ class Connector implements ConnectorInterface
      * @param string $id
      * @param array $params (optional)
      *
-     * @return array entity
+     * @return Promise of result
      *
      * @throws Exception
      */
-    public function getById($entityType, $id, array $params = [])
+    public function getByIdAsync($entityType, $id, array $params = [])
     {
         if (empty($id)) {
             throw new Exception('Id is empty');
@@ -117,6 +130,8 @@ class Connector implements ConnectorInterface
     }
 
     /**
+     * NOTE not yet async
+     *
      * Get a single Entity by a ref-string
      *
      * @param string $ref
@@ -152,9 +167,9 @@ class Connector implements ConnectorInterface
      * @param array $ids
      * @param array $params (optional)
      *
-     * @return array entities
+     * @return Promise of result
      */
-    public function getByIds($entityType, array $ids, array $params = [])
+    public function getByIdsAsync($entityType, array $ids, array $params = [])
     {
         $validIds = array_values(array_unique(array_filter($ids, [$this, 'isIdValid'])));
 
@@ -163,19 +178,20 @@ class Connector implements ConnectorInterface
         }
 
         $doSortByIds = empty($params['sort']);
-        $results = $this->search($entityType, ['_id' => ['$in' => $validIds]], $params);
-        if (!$doSortByIds) {
-            return $results;
-        }
 
-        $flipped = array_flip($validIds);
-        foreach ($results as $result) {
-            $flipped[$result['_id']] = $result;
-        }
-        return array_filter(array_values($flipped), function ($result) {
-            return is_array($result) && !empty($result);
+        return $this->searchAsync($entityType, ['_id' => ['$in' => $validIds]], $params)->then(function ($results) use ($doSortByIds, $validIds) {
+            if (!$doSortByIds) {
+                return $results;
+            }
+
+            $flipped = array_flip($validIds);
+            foreach ($results as $result) {
+                $flipped[$result['_id']] = $result;
+            }
+            return array_filter(array_values($flipped), function ($result) {
+                return is_array($result) && !empty($result);
+            });
         });
-
     }
 
     /**
@@ -184,9 +200,9 @@ class Connector implements ConnectorInterface
      * @param string $entityType
      * @param array $params (optional)
      *
-     * @return array|null
+     * @return Promise of result
      */
-    public function getAll($entityType, array $params = [])
+    public function getAllAsync($entityType, array $params = [])
     {
         return $this->doGet($entityType . '.json/crud/', $params);
     }
@@ -198,13 +214,15 @@ class Connector implements ConnectorInterface
      * @param array $selector (optional)
      * @param array $params (optional)
      *
-     * @return array
+     * @return Promise of result
      */
-    public function getIds($entityType, array $selector = [], array $params = [])
+    public function getIdsAsync($entityType, array $selector = [], array $params = [])
     {
         $params['fields'] = '_id';
 
-        return array_column($this->search($entityType, $selector, $params), '_id');
+        return $this->search($entityType, $selector, $params)->then(function ($results) {
+            return array_column($results, '_id');
+        });
     }
 
     /**
@@ -213,9 +231,9 @@ class Connector implements ConnectorInterface
      * @param string $entityType i.e. Person
      * @param array $selector (optional) i.e. ['firstName' => 'Henk']
      *
-     * @return array resultData
+     * @return Promise of result
      */
-    public function getId($entityType, array $selector = [])
+    public function getIdAsync($entityType, array $selector = [])
     {
         $params = ['limit' => 1];
         $ids = (array)$this->getIds($entityType, $selector, $params);
@@ -240,11 +258,11 @@ class Connector implements ConnectorInterface
      * @param string $entityType
      * @param string $id
      *
-     * @return array
+     * @return Promise of result
      *
      * @throws Exception
      */
-    public function getHistory($entityType, $id)
+    public function getHistoryAsync($entityType, $id)
     {
         return $this->doGet($entityType . '.json/history/' . $id);
     }
@@ -256,11 +274,11 @@ class Connector implements ConnectorInterface
      * @param array $querySelector
      * @param array $params (optional)
      *
-     * @return array
+     * @return Promise of result
      *
      * @throws Exception
      */
-    public function search($entityType, array $querySelector, array $params = [])
+    public function searchAsync($entityType, array $querySelector, array $params = [])
     {
         return $this->doPost($entityType . '.json/search', $params, $querySelector);
     }
@@ -273,11 +291,11 @@ class Connector implements ConnectorInterface
      * @param string $entityType
      * @param array $properties - the to-be-saved entity data
      *
-     * @returns array resultData
+     * @returns Promise of result
      *
      * @throws Exception
      */
-    public function update($entityType, array $properties)
+    public function updateAsync($entityType, array $properties)
     {
         $isNew = empty($properties['_id']);
 
@@ -298,11 +316,11 @@ class Connector implements ConnectorInterface
      * @param string $entityType
      * @param string $id
      *
-     * @return array
+     * @return Promise of result
      *
      * @throws Exception
      */
-    public function finalize($entityType, $id)
+    public function finalizeAsync($entityType, $id)
     {
         if ($entityType !== 'Invoice') {
             throw new Exception('Cannot call finalize on ' . $entityType);
@@ -317,9 +335,9 @@ class Connector implements ConnectorInterface
      * @param string $entityType
      * @param string $id
      *
-     * @return array resultData
+     * @return Promise of result
      */
-    public function destroy($entityType, $id)
+    public function destroyAsync($entityType, $id)
     {
         return $this->doDelete($entityType . '.json/crud/' . $id);
     }
@@ -335,13 +353,15 @@ class Connector implements ConnectorInterface
      *
      * @throws Exception
      */
-    public function getBinary($id)
+    public function getBinaryAsync($id)
     {
         if (!$this->isIdValid($id)) {
             throw new Exception('Invalid $id passed. Please provide one.');
         }
 
-        return $this->call('get', ['File.json/binary/' . $id])->getBody();
+        return $this->call('get', ['File.json/binary/' . $id])->then(function (ResponseInterface $response) {
+            return $response->getBody();
+        });
     }
 
     /**
@@ -355,7 +375,7 @@ class Connector implements ConnectorInterface
      * @return array|mixed
      * @throws Exception
      */
-    public function updateBinary(StreamInterface $resource, $name, $destinationPath, $id = '')
+    public function updateBinaryAsync(StreamInterface $resource, $name, $destinationPath, $id = '')
     {
         $metaData = ['path' => $destinationPath];
         if (empty($id)) {
@@ -373,9 +393,10 @@ class Connector implements ConnectorInterface
                 ]
             ];
 
-            $response = $this->call('post', ['File.json/binary', $options]);
+            return $this->call('post', ['File.json/binary', $options])->then(function (ResponseInterface $response) {
+                return $this->parseResult($response->getBody(), $response->getStatusCode());
+            });
 
-            return $this->parseResult($response->getBody(), $response->getStatusCode());
         }
 
         return $this->doPut('File.json/crud/' . $id, [], [
@@ -388,11 +409,30 @@ class Connector implements ConnectorInterface
     }
 
     /**
+     * MAGIC for making async sync
+     *
+     * @param string $name
+     * @param array $arguments
+     *
+     * @return mixed
+     */
+    public function __call($name, $arguments)
+    {
+        $async = $name . 'Async';
+        if (is_callable([$this, $async])) {
+            $promise = call_user_func_array([$this, $async], $arguments);
+
+            /* @var Promise $promise */
+            return $promise->wait();
+        }
+    }
+
+    /**
      * @param string $path
      * @param array $params
      * @param array $data
      *
-     * @return array
+     * @return Promise
      *
      * @throws Exception
      */
@@ -406,7 +446,7 @@ class Connector implements ConnectorInterface
      * @param array $params
      * @param array $data
      *
-     * @return array
+     * @return Promise
      *
      * @throws Exception
      */
@@ -420,7 +460,7 @@ class Connector implements ConnectorInterface
      * @param array $params
      * @param array $data
      *
-     * @return array
+     * @return Promise
      *
      * @throws Exception
      */
@@ -434,7 +474,7 @@ class Connector implements ConnectorInterface
      * @param array $params
      * @param array $data
      *
-     * @return array
+     * @return Promise
      *
      * @throws Exception
      */
@@ -451,7 +491,7 @@ class Connector implements ConnectorInterface
      * @param array $params
      * @param array $data
      *
-     * @return array i.e. [success => true|false, [errors => ['message' => 'this is broken', ..]]]
+     * @return Promise array i.e. [success => true|false, [errors => ['message' => 'this is broken', ..]]]
      *
      * @throws Exception
      */
@@ -467,20 +507,32 @@ class Connector implements ConnectorInterface
             $options['json'] = $data;
         }
 
-        $response = $this->call($method, [$path, $options]);
+        return $this->call($method, [$path, $options])->then(function (ResponseInterface $response) {
 
-        $responseData = $this->parseResult($response->getBody(), $response->getStatusCode());
+            return $this->parseResult($response->getBody(), $response->getStatusCode());
 
-        if ($response->getStatusCode() !== 200) {
-            throw new Exception(
-                $responseData['message'],
-                $responseData['code'],
-                null,
-                (($_ =& $responseData['errors']) ?: [])
-            );
-        }
+        })->otherwise(function (\Exception $ex) {
 
-        return $responseData;
+            // GuzzleHttp\Exception\ClientException
+            // Communibase\Exception
+
+            if ($ex instanceof ClientException) {
+
+                if ($ex->getResponse()->getStatusCode() !== 200) {
+                    throw new Exception(
+                        $ex->getMessage(),
+                        $ex->getResponse()->getStatusCode(),
+                        null,
+                        []
+                    );
+                }
+
+            }
+
+            throw $ex;
+
+        });
+
     }
 
     /**
@@ -659,48 +711,31 @@ class Connector implements ConnectorInterface
      * @param string $method
      * @param array $arguments
      *
-     * @return \Psr\Http\Message\ResponseInterface
+     * @return Promise
+     *
      * @throws Exception
      */
     private function call($method, array $arguments)
     {
-        try {
+        if (isset($this->extraHeaders['host'])) {
+            $arguments[1]['headers']['Host'] = $this->extraHeaders['host'];
+        }
 
-            /**
-             * Due to GuzzleHttp not passing a default host header given to the client to _every_ request made by the client
-             * we manually check to see if we need to add a hostheader to requests.
-             * When the issue is resolved the foreach can be removed (as the function might even?)
-             *
-             * @see https://github.com/guzzle/guzzle/issues/1297
-             */
-            if (isset($this->extraHeaders['host'])) {
-                $arguments[1]['headers']['Host'] = $this->extraHeaders['host'];
-            }
+        $idx = null; // the query index
+        if ($this->getQueryLogger()) {
+            $idx = $this->getQueryLogger()->startQuery($method . ' ' . reset($arguments), $arguments);
+        }
 
-            if ($this->logger) {
-                $this->logger->startQuery($method . ' ' . reset($arguments), $arguments);
-            }
+        $promise = call_user_func_array([$this->getClient(), $method . 'Async'], $arguments);
+        /* @var Promise $promise */
+        return $promise->then(function ($response) use ($idx) {
 
-           $response = call_user_func_array([$this->getClient(), $method], $arguments);
-
-            if ($this->logger) {
-                $this->logger->stopQuery();
+            if ($this->getQueryLogger()) {
+                $this->getQueryLogger()->stopQuery($idx);
             }
 
             return $response;
-
-        // try to catch the Guzzle client exception (404's, validation errors etc) and wrap them into a CB exception
-        } catch (ClientException $e) {
-
-            $response = json_decode($e->getResponse()->getBody(), true);
-
-            throw new Exception(
-                    $response['message'],
-                    $response['code'],
-                    $e,
-                    (($_ =& $response['errors']) ?: [])
-            );
-
-        }
+        });
     }
+
 }
