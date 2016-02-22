@@ -25,7 +25,7 @@ interface ConnectorInterface
      *
      * @throws Exception
      */
-    public function getTemplate($entityType);
+    public function getTemplateAsync($entityType);
 
     /**
      * Get a single Entity by its id
@@ -38,7 +38,7 @@ interface ConnectorInterface
      *
      * @throws Exception
      */
-    public function getById($entityType, $id, array $params = []);
+    public function getByIdAsync($entityType, $id, array $params = []);
 
     /**
      * Get a single Entity by a ref-string
@@ -61,7 +61,7 @@ interface ConnectorInterface
      *
      * @return array entities
      */
-    public function getByIds($entityType, array $ids, array $params = []);
+    public function getByIdsAsync($entityType, array $ids, array $params = []);
 
     /**
      * Get all entities of a certain type
@@ -71,7 +71,7 @@ interface ConnectorInterface
      *
      * @return array|null
      */
-    public function getAll($entityType, array $params = []);
+    public function getAllAsync($entityType, array $params = []);
 
     /**
      * Get result entityIds of a certain search
@@ -82,7 +82,7 @@ interface ConnectorInterface
      *
      * @return array
      */
-    public function getIds($entityType, array $selector = [], array $params = []);
+    public function getIdsAsync($entityType, array $selector = [], array $params = []);
 
     /**
      * Get the id of an entity based on a search
@@ -92,7 +92,7 @@ interface ConnectorInterface
      *
      * @return array resultData
      */
-    public function getId($entityType, array $selector = []);
+    public function getIdAsync($entityType, array $selector = []);
 
     /**
      * Returns an array of the history for the entity with the following format:
@@ -115,7 +115,7 @@ interface ConnectorInterface
      *
      * @throws Exception
      */
-    public function getHistory($entityType, $id);
+    public function getHistoryAsync($entityType, $id);
 
     /**
      * Search for the given entity by optional passed selector/params
@@ -128,7 +128,7 @@ interface ConnectorInterface
      *
      * @throws Exception
      */
-    public function search($entityType, array $querySelector, array $params = []);
+    public function searchAsync($entityType, array $querySelector, array $params = []);
 
     /**
      * This will save an entity in Communibase. When a _id-field is found, this entity will be updated
@@ -142,7 +142,7 @@ interface ConnectorInterface
      *
      * @throws Exception
      */
-    public function update($entityType, array $properties);
+    public function updateAsync($entityType, array $properties);
 
     /**
      * Finalize an invoice by adding an invoiceNumber to it.
@@ -158,7 +158,7 @@ interface ConnectorInterface
      *
      * @throws Exception
      */
-    public function finalize($entityType, $id);
+    public function finalizeAsync($entityType, $id);
 
     /**
      * Delete something from Communibase
@@ -168,7 +168,7 @@ interface ConnectorInterface
      *
      * @return array resultData
      */
-    public function destroy($entityType, $id);
+    public function destroyAsync($entityType, $id);
 
     /**
      * Get the binary contents of a file by its ID
@@ -181,7 +181,7 @@ interface ConnectorInterface
      *
      * @throws Exception
      */
-    public function getBinary($id);
+    public function getBinaryAsync($id);
 
     /**
      * Uploads the contents of the resource (this could be a file handle) to Communibase
@@ -194,7 +194,7 @@ interface ConnectorInterface
      * @return array|mixed
      * @throws Exception
      */
-    public function updateBinary(StreamInterface $resource, $name, $destinationPath, $id = '');
+    public function updateBinaryAsync(StreamInterface $resource, $name, $destinationPath, $id = '');
 
     /**
      * Add extra headers to be added to each request
