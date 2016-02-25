@@ -100,11 +100,12 @@ class Connector implements ConnectorInterface
      * @param string $id
      * @param array $params (optional)
      *
+     * @param string|null $version
      * @return array entity
      *
      * @throws Exception
      */
-    public function getById($entityType, $id, array $params = [])
+    public function getById($entityType, $id, array $params = [], $version = null)
     {
         if (empty($id)) {
             throw new Exception('Id is empty');
@@ -113,7 +114,9 @@ class Connector implements ConnectorInterface
             throw new Exception('Id is invalid, please use a correctly formatted id');
         }
 
-        return $this->doGet($entityType . '.json/crud/' . $id, $params);
+        return ($version === null)
+            ? $this->doGet($entityType . '.json/crud/' . $id, $params)
+            : $this->doGet($entityType . '.json/history/' . $id . '/' . $version, $params);
     }
 
     /**
