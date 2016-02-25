@@ -47,7 +47,7 @@ $cbc->search($entityType, $selector, $params): entity[];
 
 $cbc->getAll($entityType, $params): entity[];
 
-$cbc->getById($entityType, $id, $params): entity;
+$cbc->getById($entityType, $id, $params, $version): entity;
 
 $cbc->getByIds($entityType, $ids, $params): entity[];
 
@@ -106,7 +106,7 @@ try {
 }
 ```
 
-A special type of error handling involves "Validity" errors for posted documents. 
+A special type of error handling involves "Validity" errors for posted documents.
 
 ```
 try {
@@ -130,19 +130,19 @@ It is also possible to add a query logger to the connector.
 #### Stack query data for debug/dev purposes:
 
     $connector->setQueryLogger(new DebugStack());
-    
+
 Query data available after run via `$connector->getQueryLogger()->queries`
- 
+
 #### Echo query for debug/dev purposes (handy for cli):
 
     $connector->setQueryLogger(new EchoQueryLogger());
-    
+
 Echoes each query to the current output stream.
- 
+
 #### Create own query logging:
 
     $connector->setQueryLogger(new MyOwnQueryLogger());
-    
+
 `MyOwnQueryLogger` implements `QueryLogger` and does something with the data.. possible db/api call
 
 ## Contributions / Bugreports
@@ -152,7 +152,12 @@ Also we welcome new features and code, so please don't hesitate to get that pull
 
 ## Changelog
 
-* 2.2.1 bugfix
+* 2.2.2 Added version support
+
+	Added version parameter to getById.
+    getByIds now returns $ids parameter ordering unless provided otherwise.
+
+* 2.2.1 Bugfix
 
     Updated the fetchting of binary to work with the HOST header passing.
 
@@ -166,13 +171,13 @@ Also we welcome new features and code, so please don't hesitate to get that pull
 
     After the initial moving to Guzzle we decided to change the contstructor of the connector to allow injecting a client.
     This should help with testing the client etc.
-    
+
     We've also updated the code to be PSR-2 compliant.
 
 * 2.0.0 Guzzlified
 
     This release includes the GuzzleHttp client for all communication with the communibase API. This also bumps the minimal
-    PHP version to 5.5. (and thus drops support for earlier versions) 
+    PHP version to 5.5. (and thus drops support for earlier versions)
 
 * 1.0.0 Full on Communibase!
 
