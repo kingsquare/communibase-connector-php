@@ -3,49 +3,43 @@
 [![Latest Stable Version](https://poser.pugx.org/kingsquare/communibase-connector-php/v/stable.png)](https://packagist.org/packages/kingsquare/communibase-connector-php)
 [![License](https://poser.pugx.org/kingsquare/communibase-connector-php/license.png)](https://packagist.org/packages/kingsquare/communibase-connector-php)
 
-A general-purpose Communibase client for PHP projects, compatible with composer packaging-projects.
+A general-purpose [Communibase](https://www.communibase.nl) PHP client.
 
 A connector may be constructed to do REST-calls on the Communibase API.  The behaviour of this class should always Mimic
 the node.js-version, available at [Github](https://github.com/kingsquare/communibase-connector-js)
 
-Usage
-=====
+# Installation
 
-The easiest way to install the connector is to use [Composer](https://getcomposer.org/) and add the following to your project's composer.json file:
-```
-{
-	"require": {
-		"kingsquare/communibase-connector-php": "~1"
-	}
-}
-```
-Now you should be able to install the package by updating your composer environment ```composer install```   
-The connector is available and usable as follows:
+    composer require kingsquare/communibase-connector-php
+    
+# Usage
 
-```
-require_once __DIR__ . '/../vendor/autoload.php'; // Autoload files using Composer autoload
-use Communibase\Connector;
+A connector requires instantion with an api-key
 
-$cb = new Connector('<your api key here>');
-$peopleNamedTim = $cb->search('Person', ['firstName' => 'Tim'], ['limit' => 5]);
-print_r($peopleNamedTim);
-```
+	$cb = new \Communibase\Connector('<your api key here>');
+	
+## Example
 
+### Get, max, 5 people named "Tim"
 
-API
----
+	$cb->search('Person', ['firstName' => 'Tim'], ['limit' => 5])->then(function (results) {
+		print_r(results);
+	})-wait();
 
-"entityType" should be the Communibase Entitytype, e.g. "Person", "Invoice", etc. To see all the entity types your API key allows, see the [API docs](https://api.communibase.nl/docs/) and insert your API key there.
+# Methods
 
-"selectors" may be provided [MongoDb style](http://docs.mongodb.org/manual/reference/method/db.collection.find/#db.collection.find) as array-definitions.
+All methods are asynchronous and return a [promise](https://github.com/guzzle/promise) of a result.
+You can also use the methods in a synchronous fashion by appending "Sync" to the method. i.e. `getByIdSync`.
 
-"params" is a key value store for e.g. fields, limit, page and/or sort . See [API docs](https://api.communibase.nl/docs/) for more details. In addition to the nodeJS version of this parameter, the fields value may also be an array of fields. This will work more intuitively in PHP environments.
+ * The `entityType` should be the Communibase Entitytype, e.g. "Person", "Invoice", etc. To see all the entity types your API key allows, see the [API docs](https://api.communibase.nl/docs/) and insert your API key there.
+ * A `selector` may be provided [MongoDb style](http://docs.mongodb.org/manual/reference/method/db.collection.find/#db.collection.find) as array-definitions.
+ * The `params` is a key value store for e.g. `fields`, `limit`, `page` and/or `sort` . See [API docs](https://api.communibase.nl/docs/) for more details. In addition to the nodeJS version of this parameter, the fields value may also be an array of fields. This will work more intuitively in PHP environments.
 
-```
-
-$cbc->search($entityType, $selector, $params): entity[];
-
-$cbc->getAll($entityType, $params): entity[];
+|Method|Description|Return|
+|-|-|
+|`search(entityType, selector, params)`|Searches for `entityType` based on the given `selector` and optional `params`|Array of results|
+|`getAll(entityType, params)`|Searches for all `entityType` using optional `params`|Array of results|
+|`getById(entityType, id, params, version)`|Searches for specific `entityType` via `id` using optional `params` and optional `version`|result|
 
 $cbc->getById($entityType, $id, $params, $version): entity;
 
@@ -72,11 +66,8 @@ $cbc->getBinary(id): string;
 
 ```
 
-Whenever a function like ```getByIds()``` or ```getByIds()``` returns null, the property ```cbc->lastError``` should be available containing an error message
+## Entity
 
-
-Entity
---
 An entity is an associative array containing a key/value store of data in Communibase.
 
 E.g.
@@ -93,8 +84,10 @@ E.g.
 ]
 ```
 
-Error handling
---
+## Error handling
+
+Whenever a function like ```getByIds()``` or ```getByIds()``` returns null, the property ```cbc->lastError``` should be available containing an error message
+
 
 The connector may throw an error when something goes wrong. Default error handling is as follows:
 
@@ -123,34 +116,38 @@ try {
 }
 ```
 
-### Query Logging
+## Query Logging
 
 It is also possible to add a query logger to the connector.
 
-#### Stack query data for debug/dev purposes:
+### Stack query data for debug/dev purposes:
 
     $connector->setQueryLogger(new DebugStack());
 
 Query data available after run via `$connector->getQueryLogger()->queries`
 
-#### Echo query for debug/dev purposes (handy for cli):
+### Echo query for debug/dev purposes (handy for cli):
 
     $connector->setQueryLogger(new EchoQueryLogger());
 
 Echoes each query to the current output stream.
 
-#### Create own query logging:
+### Create own query logging:
 
     $connector->setQueryLogger(new MyOwnQueryLogger());
 
 `MyOwnQueryLogger` implements `QueryLogger` and does something with the data.. possible db/api call
 
-## Contributions / Bugreports
+# Contributions / Bugreports
 
-If you're using this app and have questions and/or feedback, please file an issue on Github.   
+If you're using this and have questions and/or feedback, please file an issue on Github.   
 Also we welcome new features and code, so please don't hesitate to get that pull request online!
 
-## Changelog
+# Changelog
+
+* 3.0.0 Async first
+
+	All methods are asynchronous (return a [promise](https://github.com/guzzle/promise) of a result), Use `{method}Sync` for synchronous results.
 
 * 2.3.0 Added version support
 

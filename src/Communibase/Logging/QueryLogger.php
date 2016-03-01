@@ -13,14 +13,16 @@ interface QueryLogger
      * @param array|null $params The Query parameters.
      * @param array|null $data The Query data/payload.
      *
-     * @return void
+     * @return int The query index
      */
     public function startQuery($query, array $params = null, array $data = null);
 
     /**
      * Marks the last started query as stopped. This can be used for timing of queries.
      *
+     * @param int $idx The query index to stop
+     *
      * @return void
      */
-    public function stopQuery();
+    public function stopQuery($idx = null);
 }

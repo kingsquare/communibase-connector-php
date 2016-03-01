@@ -44,15 +44,16 @@ class DebugStack implements QueryLogger
                     'executionMS' => 0
             ];
         }
+        return $this->currentQuery;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function stopQuery()
+    public function stopQuery($idx = null)
     {
         if ($this->enabled) {
-            $this->queries[$this->currentQuery]['executionMS'] = microtime(true) - $this->start;
+            $this->queries[$idx !== null ? $idx : $this->currentQuery]['executionMS'] = microtime(true) - $this->start;
         }
     }
 }

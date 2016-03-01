@@ -25,7 +25,7 @@ class EchoQueryLogger implements QueryLogger
     /**
      * {@inheritdoc}
      */
-    public function stopQuery()
+    public function stopQuery($idx = null)
     {
     }
 }
