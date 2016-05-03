@@ -227,6 +227,25 @@ class Connector implements ConnectorInterface
     }
 
     /**
+     * Call the aggregate endpoint with a given set of pipeline definitions:
+     * E.g. [
+     * { "$match": { "_id": {"$ObjectId": "52f8fb85fae15e6d0806e7c7"} } },
+     * { "$unwind": "$participants" },
+     * { "$group": { "_id": "$_id", "participantCount": { "$sum": 1 } } }
+     * ]
+     *
+     * @see http://docs.mongodb.org/manual/core/aggregation-pipeline/
+     *
+     * @param $entityType
+     * @param array $pipeline
+     * @return array
+     */
+    public function aggregate($entityType, array $pipeline)
+    {
+        return $this->doPost($entityType . '.json/aggregate', [], $pipeline);
+    }
+
+    /**
      * Returns an array of the history for the entity with the following format:
      *
      * <code>
