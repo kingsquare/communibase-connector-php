@@ -43,14 +43,14 @@ interface ConnectorInterface
     /**
      * Get a single Entity by a ref-string
      *
-     * @param string $ref
+     * @param array $ref
      * @param array $parentEntity (optional)
      *
      * @return array the referred Entity data
      *
      * @throws Exception
      */
-    public function getByRef($ref, array $parentEntity = []);
+    public function getByRef(array $ref, array $parentEntity = []);
 
     /**
      * Get an array of entities by their ids

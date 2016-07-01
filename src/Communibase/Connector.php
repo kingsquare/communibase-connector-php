@@ -64,9 +64,9 @@ class Connector implements ConnectorInterface
      * @param ClientInterface $client An optional GuzzleHttp Client (or Interface for mocking)
      */
     public function __construct(
-            $apiKey,
-            $serviceUrl = self::SERVICE_PRODUCTION_URL,
-            ClientInterface $client = null
+        $apiKey,
+        $serviceUrl = self::SERVICE_PRODUCTION_URL,
+        ClientInterface $client = null
     ) {
         $this->apiKey = $apiKey;
         $this->serviceUrl = $serviceUrl;
@@ -122,30 +122,47 @@ class Connector implements ConnectorInterface
     /**
      * Get a single Entity by a ref-string
      *
-     * @param string $ref
+     * @param array $ref
      * @param array $parentEntity (optional)
      *
      * @return array the referred Entity data
      *
      * @throws Exception
      */
-    public function getByRef($ref, array $parentEntity = [])
+    public function getByRef(array $ref, array $parentEntity = [])
     {
-        $refParts = explode('.', $ref);
-        if ($refParts[0] !== 'parent') {
-            $entityParts = explode('|', $refParts[0]);
-            $parentEntity = $this->getById($entityParts[0], $entityParts[1]);
+        if (strpos($ref['rootDocumentEntityType'], 'parent') !== false) {
+            // something with parent
+            throw new Exception('Not implemented (yet)');
         }
-        if (empty($refParts[1])) {
-            return $parentEntity;
+
+        $document = $this->getById($ref['rootDocumentEntityType'], $ref['rootDocumentId']);
+        if (empty($document)) {
+            throw new Exception('Invalid document reference (document cannot be found by Id)');
         }
-        $propertyParts = explode('|', $refParts[1]);
-        foreach ($parentEntity[$propertyParts[0]] as $subEntity) {
-            if ($subEntity['_id'] === $propertyParts[1]) {
-                return $subEntity;
+
+        $container = $document;
+        foreach ($ref['path'] as $pathInDocument) {
+            if (!array_key_exists($pathInDocument['field'], $container)) {
+                throw new Exception('Could not find the path in document');
             }
+            $container = $container[$pathInDocument['field']];
+            if (empty($pathInDocument['objectId'])) {
+                continue;
+            }
+
+            if (!is_array($container)) {
+                throw new Exception('Invalid value for path in document');
+            }
+            $result = array_filter($container, function($item) use ($pathInDocument) {
+                return $item['_id'] === $pathInDocument['objectId'];
+            });
+            if (empty($result)) {
+                throw new Exception('Empty result of reference');
+            }
+            $container = reset($result);
         }
-        throw new Exception('Could not find the referred Entity');
+        return $container;
     }
 
     /**
@@ -401,11 +418,11 @@ class Connector implements ConnectorInterface
         }
 
         return $this->doPut('File.json/crud/' . $id, [], [
-                'filename' => $name,
-                'length' => $resource->getSize(),
-                'uploadDate' => date('c'),
-                'metadata' => $metaData,
-                'content' => base64_encode($resource->getContents()),
+            'filename' => $name,
+            'length' => $resource->getSize(),
+            'uploadDate' => date('c'),
+            'metadata' => $metaData,
+            'content' => base64_encode($resource->getContents()),
         ]);
     }
 
@@ -568,11 +585,11 @@ class Connector implements ConnectorInterface
     {
         $jsonLastError = json_last_error();
         $messages = [
-                JSON_ERROR_DEPTH => 'Maximum stack depth exceeded',
-                JSON_ERROR_STATE_MISMATCH => 'Underflow or the modes mismatch',
-                JSON_ERROR_CTRL_CHAR => 'Unexpected control character found',
-                JSON_ERROR_SYNTAX => 'Syntax error, malformed JSON',
-                JSON_ERROR_UTF8 => 'Malformed UTF-8 characters, possibly incorrectly encoded',
+            JSON_ERROR_DEPTH => 'Maximum stack depth exceeded',
+            JSON_ERROR_STATE_MISMATCH => 'Underflow or the modes mismatch',
+            JSON_ERROR_CTRL_CHAR => 'Unexpected control character found',
+            JSON_ERROR_SYNTAX => 'Syntax error, malformed JSON',
+            JSON_ERROR_UTF8 => 'Malformed UTF-8 characters, possibly incorrectly encoded',
         ];
 
         return (isset($messages[$jsonLastError]) ? $messages[$jsonLastError] : 'Empty response received');
@@ -703,7 +720,7 @@ class Connector implements ConnectorInterface
                 $this->logger->startQuery($method . ' ' . reset($arguments), $arguments);
             }
 
-           $response = call_user_func_array([$this->getClient(), $method], $arguments);
+            $response = call_user_func_array([$this->getClient(), $method], $arguments);
 
             if ($this->logger) {
                 $this->logger->stopQuery();
@@ -711,16 +728,16 @@ class Connector implements ConnectorInterface
 
             return $response;
 
-        // try to catch the Guzzle client exception (404's, validation errors etc) and wrap them into a CB exception
+            // try to catch the Guzzle client exception (404's, validation errors etc) and wrap them into a CB exception
         } catch (ClientException $e) {
 
             $response = json_decode($e->getResponse()->getBody(), true);
 
             throw new Exception(
-                    $response['message'],
-                    $response['code'],
-                    $e,
-                    (($_ =& $response['errors']) ?: [])
+                $response['message'],
+                $response['code'],
+                $e,
+                (($_ =& $response['errors']) ?: [])
             );
 
         }
