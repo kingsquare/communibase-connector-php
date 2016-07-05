@@ -178,7 +178,7 @@ class Connector implements ConnectorInterface
      */
     public function getByIds($entityType, array $ids, array $params = [])
     {
-        $validIds = array_values(array_unique(array_filter($ids, ['Connector', 'isIdValid'])));
+        $validIds = array_values(array_unique(array_filter($ids, [__CLASS__, 'isIdValid'])));
 
         if (count($validIds) === 0) {
             return [];
