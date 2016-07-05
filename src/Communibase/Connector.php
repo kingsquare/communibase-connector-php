@@ -2,6 +2,7 @@
 namespace Communibase;
 
 use Communibase\Logging\QueryLogger;
+use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\ClientException;
 use Psr\Http\Message\StreamInterface;
@@ -110,7 +111,8 @@ class Connector implements ConnectorInterface
         if (empty($id)) {
             throw new Exception('Id is empty');
         }
-        if (!$this->isIdValid($id)) {
+
+        if (!static::isIdValid($id)) {
             throw new Exception('Id is invalid, please use a correctly formatted id');
         }
 
@@ -137,7 +139,7 @@ class Connector implements ConnectorInterface
         }
 
         $document = $this->getById($ref['rootDocumentEntityType'], $ref['rootDocumentId']);
-        if (empty($document)) {
+        if (count($document) === 0) {
             throw new Exception('Invalid document reference (document cannot be found by Id)');
         }
 
@@ -157,7 +159,7 @@ class Connector implements ConnectorInterface
             $result = array_filter($container, function($item) use ($pathInDocument) {
                 return $item['_id'] === $pathInDocument['objectId'];
             });
-            if (empty($result)) {
+            if (count($result) === 0) {
                 throw new Exception('Empty result of reference');
             }
             $container = reset($result);
@@ -176,9 +178,9 @@ class Connector implements ConnectorInterface
      */
     public function getByIds($entityType, array $ids, array $params = [])
     {
-        $validIds = array_values(array_unique(array_filter($ids, [$this, 'isIdValid'])));
+        $validIds = array_values(array_unique(array_filter($ids, ['Connector', 'isIdValid'])));
 
-        if (empty($validIds)) {
+        if (count($validIds) === 0) {
             return [];
         }
 
@@ -329,8 +331,8 @@ class Connector implements ConnectorInterface
 
     /**
      * Finalize an invoice by adding an invoiceNumber to it.
-     * Besides, invoice items will receive a "generalLedgerAccountNumber".
-     * This number will be unique and sequential within the "daybook" of the invoice.
+     * Besides, invoice items will receive a 'generalLedgerAccountNumber'.
+     * This number will be unique and sequential within the 'daybook' of the invoice.
      *
      * NOTE: this is Invoice specific
      *
@@ -376,7 +378,7 @@ class Connector implements ConnectorInterface
      */
     public function getBinary($id)
     {
-        if (!$this->isIdValid($id)) {
+        if (!static::isIdValid($id)) {
             throw new Exception('Invalid $id passed. Please provide one.');
         }
 
@@ -397,33 +399,37 @@ class Connector implements ConnectorInterface
     public function updateBinary(StreamInterface $resource, $name, $destinationPath, $id = '')
     {
         $metaData = ['path' => $destinationPath];
-        if (empty($id)) {
-            $options = [
-                'multipart' => [
-                    [
-                        'name' => 'File',
-                        'filename' => $name,
-                        'contents' => $resource
-                    ],
-                    [
-                        'name' => 'metadata',
-                        'contents' => json_encode($metaData),
-                    ]
-                ]
-            ];
+        if (!empty($id)) {
+            if (!static::isIdValid($id)) {
+                throw new Exception('Id is invalid, please use a correctly formatted id');
+            }
 
-            $response = $this->call('post', ['File.json/binary', $options]);
-
-            return $this->parseResult($response->getBody(), $response->getStatusCode());
+            return $this->doPut('File.json/crud/' . $id, [], [
+                'filename' => $name,
+                'length' => $resource->getSize(),
+                'uploadDate' => date('c'),
+                'metadata' => $metaData,
+                'content' => base64_encode($resource->getContents()),
+            ]);
         }
 
-        return $this->doPut('File.json/crud/' . $id, [], [
-            'filename' => $name,
-            'length' => $resource->getSize(),
-            'uploadDate' => date('c'),
-            'metadata' => $metaData,
-            'content' => base64_encode($resource->getContents()),
-        ]);
+        $options = [
+            'multipart' => [
+                [
+                    'name' => 'File',
+                    'filename' => $name,
+                    'contents' => $resource
+                ],
+                [
+                    'name' => 'metadata',
+                    'contents' => json_encode($metaData),
+                ]
+            ]
+        ];
+
+        $response = $this->call('post', ['File.json/binary', $options]);
+
+        return $this->parseResult($response->getBody(), $response->getStatusCode());
     }
 
     /**
@@ -502,7 +508,7 @@ class Connector implements ConnectorInterface
         $options = [
             'query' => $this->preParseParams($params),
         ];
-        if (!empty($data)) {
+        if (count($data)) {
             $options['json'] = $data;
         }
 
@@ -542,8 +548,8 @@ class Connector implements ConnectorInterface
 
             $modifier = 1;
             $firstChar = substr($field, 0, 1);
-            if ($firstChar == '+' || $firstChar == '-') {
-                $modifier = $firstChar == '+' ? 1 : 0;
+            if ($firstChar === '+' || $firstChar === '-') {
+                $modifier = $firstChar === '+' ? 1 : 0;
                 $field = substr($field, 1);
             }
             $fields[$field] = $modifier;
@@ -629,13 +635,13 @@ class Connector implements ConnectorInterface
 
         $ts = pack('N', time());
         $m = substr(md5(gethostname()), 0, 3);
-        $pid = pack('n', 1); //posix_getpid()
+        $pid = pack('n', 1);
         $trail = substr(pack('N', $inc++), 1, 3);
 
-        $bin = sprintf("%s%s%s%s", $ts, $m, $pid, $trail);
+        $bin = sprintf('%s%s%s%s', $ts, $m, $pid, $trail);
         $id = '';
         for ($i = 0; $i < 12; $i++) {
-            $id .= sprintf("%02X", ord($bin[$i]));
+            $id .= sprintf('%02X', ord($bin[$i]));
         }
 
         return strtolower($id);
@@ -670,7 +676,7 @@ class Connector implements ConnectorInterface
     }
 
     /**
-     * @return \GuzzleHttp\Client
+     * @return Client
      * @throws Exception
      */
     protected function getClient()
@@ -683,7 +689,7 @@ class Connector implements ConnectorInterface
             throw new Exception('Use of connector not possible without API key', Exception::INVALID_API_KEY);
         }
 
-        $this->client = new \GuzzleHttp\Client([
+        $this->client = new Client([
             'base_uri' => $this->serviceUrl,
             'headers' => array_merge($this->extraHeaders, [
                 'User-Agent' => 'Connector-PHP/2',
