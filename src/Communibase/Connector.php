@@ -138,7 +138,11 @@ class Connector implements ConnectorInterface
             throw new Exception('Not implemented (yet)');
         }
 
-        $document = $this->getById($ref['rootDocumentEntityType'], $ref['rootDocumentId']);
+        $document = $parentEntity;
+        if (empty($document['_id']) || $document['_id'] !== $ref['rootDocumentId']) {
+            $document = $this->getById($ref['rootDocumentEntityType'], $ref['rootDocumentId']);
+        }
+
         if (count($document) === 0) {
             throw new Exception('Invalid document reference (document cannot be found by Id)');
         }
