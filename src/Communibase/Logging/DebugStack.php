@@ -23,7 +23,7 @@ class DebugStack implements QueryLogger
     /**
      * @var float|null
      */
-    public $start = null;
+    public $start;
 
     /**
      * @var integer

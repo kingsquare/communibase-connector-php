@@ -100,8 +100,8 @@ class Connector implements ConnectorInterface
      * @param string $entityType
      * @param string $id
      * @param array $params (optional)
-     *
      * @param string|null $version
+     *
      * @return array entity
      *
      * @throws Exception
@@ -138,7 +138,11 @@ class Connector implements ConnectorInterface
             throw new Exception('Not implemented (yet)');
         }
 
-        $document = $this->getById($ref['rootDocumentEntityType'], $ref['rootDocumentId']);
+        $document = $parentEntity;
+        if (empty($document['_id']) || $document['_id'] !== $ref['rootDocumentId']) {
+            $document = $this->getById($ref['rootDocumentEntityType'], $ref['rootDocumentId']);
+        }
+
         if (count($document) === 0) {
             throw new Exception('Invalid document reference (document cannot be found by Id)');
         }
@@ -156,7 +160,7 @@ class Connector implements ConnectorInterface
             if (!is_array($container)) {
                 throw new Exception('Invalid value for path in document');
             }
-            $result = array_filter($container, function($item) use ($pathInDocument) {
+            $result = array_filter($container, function ($item) use ($pathInDocument) {
                 return $item['_id'] === $pathInDocument['objectId'];
             });
             if (count($result) === 0) {
@@ -175,6 +179,8 @@ class Connector implements ConnectorInterface
      * @param array $params (optional)
      *
      * @return array entities
+     *
+     * @throws Exception
      */
     public function getByIds($entityType, array $ids, array $params = [])
     {
@@ -195,7 +201,7 @@ class Connector implements ConnectorInterface
             $flipped[$result['_id']] = $result;
         }
         return array_filter(array_values($flipped), function ($result) {
-            return is_array($result) && !empty($result);
+            return is_array($result) && count($result) > 0;
         });
 
     }
@@ -207,6 +213,8 @@ class Connector implements ConnectorInterface
      * @param array $params (optional)
      *
      * @return array|null
+     *
+     * @throws Exception
      */
     public function getAll($entityType, array $params = [])
     {
@@ -221,6 +229,8 @@ class Connector implements ConnectorInterface
      * @param array $params (optional)
      *
      * @return array
+     *
+     * @throws Exception
      */
     public function getIds($entityType, array $selector = [], array $params = [])
     {
@@ -258,6 +268,8 @@ class Connector implements ConnectorInterface
      * @param $entityType
      * @param array $pipeline
      * @return array
+     *
+     * @throws Exception
      */
     public function aggregate($entityType, array $pipeline)
     {
@@ -359,6 +371,8 @@ class Connector implements ConnectorInterface
      * @param string $id
      *
      * @return array resultData
+     *
+     * @throws Exception
      */
     public function destroy($entityType, $id)
     {
@@ -394,7 +408,8 @@ class Connector implements ConnectorInterface
      * @param string $id
      *
      * @return array|mixed
-     * @throws Exception
+     *
+     * @throws \RuntimeException | Exception
      */
     public function updateBinary(StreamInterface $resource, $name, $destinationPath, $id = '')
     {
@@ -433,6 +448,8 @@ class Connector implements ConnectorInterface
     }
 
     /**
+     * Perform the actual GET
+     *
      * @param string $path
      * @param array $params
      * @param array $data
@@ -447,6 +464,8 @@ class Connector implements ConnectorInterface
     }
 
     /**
+     * Perform the actual POST
+     *
      * @param string $path
      * @param array $params
      * @param array $data
@@ -461,6 +480,8 @@ class Connector implements ConnectorInterface
     }
 
     /**
+     * Perform the actual PUT
+     *
      * @param string $path
      * @param array $params
      * @param array $data
@@ -475,6 +496,8 @@ class Connector implements ConnectorInterface
     }
 
     /**
+     * Perform the actual DELETE
+     *
      * @param string $path
      * @param array $params
      * @param array $data
@@ -589,19 +612,21 @@ class Connector implements ConnectorInterface
      */
     private function getLastJsonError()
     {
-        $jsonLastError = json_last_error();
-        $messages = [
+        static $messages = [
             JSON_ERROR_DEPTH => 'Maximum stack depth exceeded',
             JSON_ERROR_STATE_MISMATCH => 'Underflow or the modes mismatch',
             JSON_ERROR_CTRL_CHAR => 'Unexpected control character found',
             JSON_ERROR_SYNTAX => 'Syntax error, malformed JSON',
             JSON_ERROR_UTF8 => 'Malformed UTF-8 characters, possibly incorrectly encoded',
         ];
+        $jsonLastError = json_last_error();
 
-        return (isset($messages[$jsonLastError]) ? $messages[$jsonLastError] : 'Empty response received');
+        return array_key_exists($jsonLastError, $messages) ? $messages[$jsonLastError] : 'Empty response received';
     }
 
     /**
+     * Verify the given $id is a valid Communibase string according to format
+     *
      * @param string $id
      *
      * @return bool
@@ -676,7 +701,8 @@ class Connector implements ConnectorInterface
     }
 
     /**
-     * @return Client
+     * @return ClientInterface
+     *
      * @throws Exception
      */
     protected function getClient()
@@ -701,10 +727,13 @@ class Connector implements ConnectorInterface
     }
 
     /**
+     * Perform the actual call to Communibase
+     *
      * @param string $method
      * @param array $arguments
      *
      * @return \Psr\Http\Message\ResponseInterface
+     *
      * @throws Exception
      */
     private function call($method, array $arguments)
