@@ -27,7 +27,7 @@ class ConnectorTest extends \PHPUnit_Framework_TestCase
     public function constructorWithClient()
     {
         $connector = new Connector('test', '', $this->getHttpClient());
-        $this->assertInstanceOf('\Communibase\Connector', $connector);
+        static::assertInstanceOf('\Communibase\Connector', $connector);
     }
 
     /**
@@ -63,7 +63,7 @@ class ConnectorTest extends \PHPUnit_Framework_TestCase
      */
     public function isIdValid($id, $isValid)
     {
-        $this->assertSame($isValid, Connector::isIdValid($id));
+        static::assertSame($isValid, Connector::isIdValid($id));
     }
 
     /**
@@ -74,7 +74,7 @@ class ConnectorTest extends \PHPUnit_Framework_TestCase
     {
         $id = Connector::generateId();
 
-        $this->assertTrue(Connector::isIdValid($id));
+        static::assertTrue(Connector::isIdValid($id));
     }
 
     /**

@@ -21,6 +21,8 @@ class FinalizeTest extends \PHPUnit_Framework_TestCase
                 ->getMock();
 
         // must throw exception
+
+        /* @var \Communibase\Connector $stub */
         $stub->finalize('Person', 'id');
     }
 }

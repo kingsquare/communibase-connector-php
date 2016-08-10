@@ -2,6 +2,7 @@
 namespace Communibase;
 
 use Communibase\Logging\QueryLogger;
+use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Promise\Promise;
@@ -77,9 +78,9 @@ class Connector implements ConnectorInterface
      * @param ClientInterface $client An optional GuzzleHttp Client (or Interface for mocking)
      */
     public function __construct(
-            $apiKey,
-            $serviceUrl = self::SERVICE_PRODUCTION_URL,
-            ClientInterface $client = null
+        $apiKey,
+        $serviceUrl = self::SERVICE_PRODUCTION_URL,
+        ClientInterface $client = null
     ) {
         $this->apiKey = $apiKey;
         $this->serviceUrl = $serviceUrl;
@@ -126,7 +127,8 @@ class Connector implements ConnectorInterface
         if (empty($id)) {
             throw new Exception('Id is empty');
         }
-        if (!$this->isIdValid($id)) {
+
+        if (!static::isIdValid($id)) {
             throw new Exception('Id is invalid, please use a correctly formatted id');
         }
 
@@ -140,30 +142,51 @@ class Connector implements ConnectorInterface
      *
      * Get a single Entity by a ref-string
      *
-     * @param string $ref
+     * @param array $ref
      * @param array $parentEntity (optional)
      *
      * @return array the referred Entity data
      *
      * @throws Exception
      */
-    public function getByRef($ref, array $parentEntity = [])
+    public function getByRef(array $ref, array $parentEntity = [])
     {
-        $refParts = explode('.', $ref);
-        if ($refParts[0] !== 'parent') {
-            $entityParts = explode('|', $refParts[0]);
-            $parentEntity = $this->getById($entityParts[0], $entityParts[1]);
+        if (strpos($ref['rootDocumentEntityType'], 'parent') !== false) {
+            // something with parent
+            throw new Exception('Not implemented (yet)');
         }
-        if (empty($refParts[1])) {
-            return $parentEntity;
+
+        $document = $parentEntity;
+        if (empty($document['_id']) || $document['_id'] !== $ref['rootDocumentId']) {
+            $document = $this->getById($ref['rootDocumentEntityType'], $ref['rootDocumentId']);
         }
-        $propertyParts = explode('|', $refParts[1]);
-        foreach ($parentEntity[$propertyParts[0]] as $subEntity) {
-            if ($subEntity['_id'] === $propertyParts[1]) {
-                return $subEntity;
+
+        if (count($document) === 0) {
+            throw new Exception('Invalid document reference (document cannot be found by Id)');
+        }
+
+        $container = $document;
+        foreach ($ref['path'] as $pathInDocument) {
+            if (!array_key_exists($pathInDocument['field'], $container)) {
+                throw new Exception('Could not find the path in document');
             }
+            $container = $container[$pathInDocument['field']];
+            if (empty($pathInDocument['objectId'])) {
+                continue;
+            }
+
+            if (!is_array($container)) {
+                throw new Exception('Invalid value for path in document');
+            }
+            $result = array_filter($container, function ($item) use ($pathInDocument) {
+                return $item['_id'] === $pathInDocument['objectId'];
+            });
+            if (count($result) === 0) {
+                throw new Exception('Empty result of reference');
+            }
+            $container = reset($result);
         }
-        throw new Exception('Could not find the referred Entity');
+        return $container;
     }
 
     /**
@@ -174,12 +197,14 @@ class Connector implements ConnectorInterface
      * @param array $params (optional)
      *
      * @return Promise of result
+     *
+     * @throws Exception
      */
     public function getByIds($entityType, array $ids, array $params = [])
     {
-        $validIds = array_values(array_unique(array_filter($ids, [$this, 'isIdValid'])));
+        $validIds = array_values(array_unique(array_filter($ids, [__CLASS__, 'isIdValid'])));
 
-        if (empty($validIds)) {
+        if (count($validIds) === 0) {
             return [];
         }
 
@@ -195,7 +220,7 @@ class Connector implements ConnectorInterface
                 $flipped[$result['_id']] = $result;
             }
             return array_filter(array_values($flipped), function ($result) {
-                return is_array($result) && !empty($result);
+                return is_array($result) && count($result) > 0;
             });
         });
     }
@@ -207,6 +232,8 @@ class Connector implements ConnectorInterface
      * @param array $params (optional)
      *
      * @return Promise of result
+     *
+     * @throws Exception
      */
     public function getAll($entityType, array $params = [])
     {
@@ -221,6 +248,8 @@ class Connector implements ConnectorInterface
      * @param array $params (optional)
      *
      * @return Promise of result
+     *
+     * @throws Exception
      */
     public function getIds($entityType, array $selector = [], array $params = [])
     {
@@ -245,6 +274,28 @@ class Connector implements ConnectorInterface
         $ids = (array)$this->getIds($entityType, $selector, $params);
 
         return array_shift($ids);
+    }
+
+    /**
+     * Call the aggregate endpoint with a given set of pipeline definitions:
+     * E.g. [
+     * { "$match": { "_id": {"$ObjectId": "52f8fb85fae15e6d0806e7c7"} } },
+     * { "$unwind": "$participants" },
+     * { "$group": { "_id": "$_id", "participantCount": { "$sum": 1 } } }
+     * ]
+     *
+     * @see http://docs.mongodb.org/manual/core/aggregation-pipeline/
+     *
+     * @param $entityType
+     * @param array $pipeline
+     *
+     * @return Promise of a result
+     *
+     * @throws Exception
+     */
+    public function aggregate($entityType, array $pipeline)
+    {
+        return $this->doPost($entityType . '.json/aggregate', [], $pipeline);
     }
 
     /**
@@ -314,8 +365,8 @@ class Connector implements ConnectorInterface
 
     /**
      * Finalize an invoice by adding an invoiceNumber to it.
-     * Besides, invoice items will receive a "generalLedgerAccountNumber".
-     * This number will be unique and sequential within the "daybook" of the invoice.
+     * Besides, invoice items will receive a 'generalLedgerAccountNumber'.
+     * This number will be unique and sequential within the 'daybook' of the invoice.
      *
      * NOTE: this is Invoice specific
      *
@@ -342,6 +393,8 @@ class Connector implements ConnectorInterface
      * @param string $id
      *
      * @return Promise of result
+     *
+     * @throws Exception
      */
     public function destroy($entityType, $id)
     {
@@ -361,7 +414,7 @@ class Connector implements ConnectorInterface
      */
     public function getBinary($id)
     {
-        if (!$this->isIdValid($id)) {
+        if (!static::isIdValid($id)) {
             throw new Exception('Invalid $id passed. Please provide one.');
         }
 
@@ -379,39 +432,43 @@ class Connector implements ConnectorInterface
      * @param string $id
      *
      * @return array|mixed
-     * @throws Exception
+     *
+     * @throws \RuntimeException | Exception
      */
     public function updateBinary(StreamInterface $resource, $name, $destinationPath, $id = '')
     {
         $metaData = ['path' => $destinationPath];
-        if (empty($id)) {
-            $options = [
-                'multipart' => [
-                    [
-                        'name' => 'File',
-                        'filename' => $name,
-                        'contents' => $resource
-                    ],
-                    [
-                        'name' => 'metadata',
-                        'contents' => json_encode($metaData),
-                    ]
-                ]
-            ];
+        if (!empty($id)) {
+            if (!static::isIdValid($id)) {
+                throw new Exception('Id is invalid, please use a correctly formatted id');
+            }
 
-            return $this->call('post', ['File.json/binary', $options])->then(function (ResponseInterface $response) {
-                return $this->parseResult($response->getBody(), $response->getStatusCode());
-            });
-
-        }
-
-        return $this->doPut('File.json/crud/' . $id, [], [
+            return $this->doPut('File.json/crud/' . $id, [], [
                 'filename' => $name,
                 'length' => $resource->getSize(),
                 'uploadDate' => date('c'),
                 'metadata' => $metaData,
                 'content' => base64_encode($resource->getContents()),
-        ]);
+            ]);
+        }
+
+        $options = [
+            'multipart' => [
+                [
+                    'name' => 'File',
+                    'filename' => $name,
+                    'contents' => $resource
+                ],
+                [
+                    'name' => 'metadata',
+                    'contents' => json_encode($metaData),
+                ]
+            ]
+        ];
+
+        return $this->call('post', ['File.json/binary', $options])->then(function (ResponseInterface $response) {
+            return $this->parseResult($response->getBody(), $response->getStatusCode());
+        });
     }
 
     /**
@@ -436,6 +493,8 @@ class Connector implements ConnectorInterface
     }
 
     /**
+     * Perform the actual GET
+     *
      * @param string $path
      * @param array $params
      * @param array $data
@@ -450,6 +509,8 @@ class Connector implements ConnectorInterface
     }
 
     /**
+     * Perform the actual POST
+     *
      * @param string $path
      * @param array $params
      * @param array $data
@@ -464,6 +525,8 @@ class Connector implements ConnectorInterface
     }
 
     /**
+     * Perform the actual PUT
+     *
      * @param string $path
      * @param array $params
      * @param array $data
@@ -478,6 +541,8 @@ class Connector implements ConnectorInterface
     }
 
     /**
+     * Perform the actual DELETE
+     *
      * @param string $path
      * @param array $params
      * @param array $data
@@ -563,8 +628,8 @@ class Connector implements ConnectorInterface
 
             $modifier = 1;
             $firstChar = substr($field, 0, 1);
-            if ($firstChar == '+' || $firstChar == '-') {
-                $modifier = $firstChar == '+' ? 1 : 0;
+            if ($firstChar === '+' || $firstChar === '-') {
+                $modifier = $firstChar === '+' ? 1 : 0;
                 $field = substr($field, 1);
             }
             $fields[$field] = $modifier;
@@ -604,19 +669,21 @@ class Connector implements ConnectorInterface
      */
     private function getLastJsonError()
     {
-        $jsonLastError = json_last_error();
-        $messages = [
-                JSON_ERROR_DEPTH => 'Maximum stack depth exceeded',
-                JSON_ERROR_STATE_MISMATCH => 'Underflow or the modes mismatch',
-                JSON_ERROR_CTRL_CHAR => 'Unexpected control character found',
-                JSON_ERROR_SYNTAX => 'Syntax error, malformed JSON',
-                JSON_ERROR_UTF8 => 'Malformed UTF-8 characters, possibly incorrectly encoded',
+        static $messages = [
+            JSON_ERROR_DEPTH => 'Maximum stack depth exceeded',
+            JSON_ERROR_STATE_MISMATCH => 'Underflow or the modes mismatch',
+            JSON_ERROR_CTRL_CHAR => 'Unexpected control character found',
+            JSON_ERROR_SYNTAX => 'Syntax error, malformed JSON',
+            JSON_ERROR_UTF8 => 'Malformed UTF-8 characters, possibly incorrectly encoded',
         ];
+        $jsonLastError = json_last_error();
 
-        return (isset($messages[$jsonLastError]) ? $messages[$jsonLastError] : 'Empty response received');
+        return array_key_exists($jsonLastError, $messages) ? $messages[$jsonLastError] : 'Empty response received';
     }
 
     /**
+     * Verify the given $id is a valid Communibase string according to format
+     *
      * @param string $id
      *
      * @return bool
@@ -650,13 +717,13 @@ class Connector implements ConnectorInterface
 
         $ts = pack('N', time());
         $m = substr(md5(gethostname()), 0, 3);
-        $pid = pack('n', 1); //posix_getpid()
+        $pid = pack('n', 1);
         $trail = substr(pack('N', $inc++), 1, 3);
 
-        $bin = sprintf("%s%s%s%s", $ts, $m, $pid, $trail);
+        $bin = sprintf('%s%s%s%s', $ts, $m, $pid, $trail);
         $id = '';
         for ($i = 0; $i < 12; $i++) {
-            $id .= sprintf("%02X", ord($bin[$i]));
+            $id .= sprintf('%02X', ord($bin[$i]));
         }
 
         return strtolower($id);
@@ -691,7 +758,8 @@ class Connector implements ConnectorInterface
     }
 
     /**
-     * @return \GuzzleHttp\Client
+     * @return ClientInterface
+     *
      * @throws Exception
      */
     protected function getClient()
@@ -704,7 +772,7 @@ class Connector implements ConnectorInterface
             throw new Exception('Use of connector not possible without API key', Exception::INVALID_API_KEY);
         }
 
-        $this->client = new \GuzzleHttp\Client([
+        $this->client = new Client([
             'base_uri' => $this->serviceUrl,
             'headers' => array_merge($this->extraHeaders, [
                 'User-Agent' => 'Connector-PHP/2',
@@ -716,6 +784,8 @@ class Connector implements ConnectorInterface
     }
 
     /**
+     * Perform the actual call to Communibase
+     *
      * @param string $method
      * @param array $arguments
      *
@@ -725,25 +795,48 @@ class Connector implements ConnectorInterface
      */
     private function call($method, array $arguments)
     {
-        if (isset($this->extraHeaders['host'])) {
-            $arguments[1]['headers']['Host'] = $this->extraHeaders['host'];
-        }
+        try {
 
-        $idx = null; // the query index
-        if ($this->getQueryLogger()) {
-            $idx = $this->getQueryLogger()->startQuery($method . ' ' . reset($arguments), $arguments);
-        }
-
-        $promise = call_user_func_array([$this->getClient(), $method . 'Async'], $arguments);
-        /* @var Promise $promise */
-        return $promise->then(function ($response) use ($idx) {
-
-            if ($this->getQueryLogger()) {
-                $this->getQueryLogger()->stopQuery($idx);
+            /**
+             * Due to GuzzleHttp not passing a default host header given to the client to _every_ request made by the client
+             * we manually check to see if we need to add a hostheader to requests.
+             * When the issue is resolved the foreach can be removed (as the function might even?)
+             *
+             * @see https://github.com/guzzle/guzzle/issues/1297
+             */
+            if (isset($this->extraHeaders['host'])) {
+                $arguments[1]['headers']['Host'] = $this->extraHeaders['host'];
             }
 
-            return $response;
-        });
+            $idx = null; // the query index
+            if ($this->getQueryLogger()) {
+                $idx = $this->getQueryLogger()->startQuery($method . ' ' . reset($arguments), $arguments);
+            }
+
+            $promise = call_user_func_array([$this->getClient(), $method . 'Async'], $arguments);
+            /* @var Promise $promise */
+            return $promise->then(function ($response) use ($idx) {
+
+                if ($this->getQueryLogger()) {
+                    $this->getQueryLogger()->stopQuery($idx);
+                }
+
+                return $response;
+            });
+
+            // try to catch the Guzzle client exception (404's, validation errors etc) and wrap them into a CB exception
+        } catch (ClientException $e) {
+
+            $response = json_decode($e->getResponse()->getBody(), true);
+
+            throw new Exception(
+                $response['message'],
+                $response['code'],
+                $e,
+                (($_ =& $response['errors']) ?: [])
+            );
+
+        }
     }
 
 }

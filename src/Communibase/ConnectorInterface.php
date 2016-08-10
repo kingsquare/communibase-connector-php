@@ -43,14 +43,14 @@ interface ConnectorInterface
     /**
      * Get a single Entity by a ref-string
      *
-     * @param string $ref
+     * @param array $ref
      * @param array $parentEntity (optional)
      *
      * @return array the referred Entity data
      *
      * @throws Exception
      */
-    public function getByRef($ref, array $parentEntity = []);
+    public function getByRef(array $ref, array $parentEntity = []);
 
     /**
      * Get an array of entities by their ids
@@ -93,6 +93,22 @@ interface ConnectorInterface
      * @return array resultData
      */
     public function getId($entityType, array $selector = []);
+
+    /**
+     * Call the aggregate endpoint with a given set of pipeline definitions:
+     * E.g. [
+     * { "$match": { "_id": {"$ObjectId": "52f8fb85fae15e6d0806e7c7"} } },
+     * { "$unwind": "$participants" },
+     * { "$group": { "_id": "$_id", "participantCount": { "$sum": 1 } } }
+     * ]
+     *
+     * @see http://docs.mongodb.org/manual/core/aggregation-pipeline/
+     *
+     * @param $entityType
+     * @param array $pipeline
+     * @return array
+     */
+    public function aggregate($entityType, array $pipeline);
 
     /**
      * Returns an array of the history for the entity with the following format:
