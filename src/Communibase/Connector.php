@@ -124,6 +124,8 @@ class Connector implements ConnectorInterface
     /**
      * Get a single Entity by a ref-string
      *
+     * @todo if the ref is a parent.parent.parent the code would need further improvement.
+     *
      * @param array $ref
      * @param array $parentEntity (optional)
      *
@@ -133,18 +135,15 @@ class Connector implements ConnectorInterface
      */
     public function getByRef(array $ref, array $parentEntity = [])
     {
-        if (strpos($ref['rootDocumentEntityType'], 'parent') !== false) {
-            // something with parent
-            throw new Exception('Not implemented (yet)');
-        }
-
         $document = $parentEntity;
-        if (empty($document['_id']) || $document['_id'] !== $ref['rootDocumentId']) {
-            $document = $this->getById($ref['rootDocumentEntityType'], $ref['rootDocumentId']);
-        }
+        if (strpos($ref['rootDocumentEntityType'], 'parent') === false) {
+            if (empty($document['_id']) || $document['_id'] !== $ref['rootDocumentId']) {
+                $document = $this->getById($ref['rootDocumentEntityType'], $ref['rootDocumentId']);
+            }
 
-        if (count($document) === 0) {
-            throw new Exception('Invalid document reference (document cannot be found by Id)');
+            if (count($document) === 0) {
+                throw new Exception('Invalid document reference (document cannot be found by Id)');
+            }
         }
 
         $container = $document;
