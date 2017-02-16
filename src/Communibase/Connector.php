@@ -5,6 +5,7 @@ use Communibase\Logging\QueryLogger;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\ConnectException;
 use Psr\Http\Message\StreamInterface;
 
 /**
@@ -773,6 +774,10 @@ class Connector implements ConnectorInterface
                 $e,
                 (($_ =& $response['errors']) ?: [])
             );
+
+        } catch (ConnectException $e) {
+
+            throw new Exception('Can not connect', 500, $e, []);
 
         }
     }
