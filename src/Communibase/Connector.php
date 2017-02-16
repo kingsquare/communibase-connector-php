@@ -715,6 +715,7 @@ class Connector implements ConnectorInterface
         }
 
         $this->client = new Client([
+            'connect_timeout' => 2,
             'base_uri' => $this->serviceUrl,
             'headers' => array_merge($this->extraHeaders, [
                 'User-Agent' => 'Connector-PHP/2',
