@@ -14,17 +14,17 @@ Usage
 =====
 
 The easiest way to install the connector is to use [Composer](https://getcomposer.org/) and add the following to your project's composer.json file:
-```
+```json
 {
-	"require": {
-		"kingsquare/communibase-connector-php": "~1"
-	}
+  "require": {
+    "kingsquare/communibase-connector-php": "~1"
+  }
 }
 ```
 Now you should be able to install the package by updating your composer environment ```composer install```   
 The connector is available and usable as follows:
 
-```
+```php
 require_once __DIR__ . '/../vendor/autoload.php'; // Autoload files using Composer autoload
 use Communibase\Connector;
 
@@ -43,7 +43,7 @@ API
 
 "params" is a key value store for e.g. fields, limit, page and/or sort . See [API docs](https://api.communibase.nl/docs/) for more details. In addition to the nodeJS version of this parameter, the fields value may also be an array of fields. This will work more intuitively in PHP environments.
 
-```
+```php
 
 $cbc->search($entityType, $selector, $params): entity[];
 
@@ -83,15 +83,16 @@ An entity is an associative array containing a key/value store of data in Commun
 
 E.g.
 
-```
+```php
 [
-	'firstName' => 'Tim',
-	'addresses' => [
-		[
-			'street' => 'Breestraat'
-			...
-		], ...
-	]
+  'firstName' => 'Tim',
+  'addresses' => [
+    [
+      'street' => 'Breestraat',
+      // ...
+    ], 
+    // ...
+  ]
 ]
 ```
 
@@ -100,28 +101,28 @@ Error handling
 
 The connector may throw an error when something goes wrong. Default error handling is as follows:
 
-```
+```php
 try {
-	$person = $cbc->getById('Person', '_DOES_NOT_EXIST_');
+  $person = $cbc->getById('Person', '_PERSON_ID_');
 } catch (\Communibase\Exception $e) {
-	echo $e->getMessage();
+  echo $e->getMessage();
 }
 ```
 
 A special type of error handling involves "Validity" errors for posted documents.
 
-```
+```php
 try {
-	$person = $cbc->update('Person', [...]);
+  $person = $cbc->update('Person', [...]);
 } catch (\Communibase\Exception $e) {
-	//get an array of errors, per property:
-	//	[
-	//		[
-	//			'field' => '<string>',
-	//			'message' => '<string>'
-	//		]
-	//	]
-	print_r($e->getErrors());
+  //get an array of errors, per property:
+  //  [
+  //    [
+  //      'field' => '<string>',
+  //      'message' => '<string>'
+  //    ]
+  //  ]
+  print_r($e->getErrors());
 }
 ```
 
