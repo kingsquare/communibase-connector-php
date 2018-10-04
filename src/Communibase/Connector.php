@@ -768,7 +768,8 @@ class Connector implements ConnectorInterface
             // try to catch the Guzzle client exception (404's, validation errors etc) and wrap them into a CB exception
         } catch (ClientException $e) {
 
-            $response = json_decode($e->getResponse()->getBody(), true);
+            $response = $e->getResponse();
+            $response = json_decode($response === null ? '' : $response->getBody(), true);
 
             throw new Exception(
                 $response['message'],
