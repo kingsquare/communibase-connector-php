@@ -1,4 +1,5 @@
 <?php
+
 namespace Communibase;
 
 use Communibase\Logging\QueryLogger;
@@ -328,19 +329,16 @@ class Connector implements ConnectorInterface
      * @param string $entityType
      * @param array $properties - the to-be-saved entity data
      *
-     * @returns array resultData
+     * @return array resultData
      *
      * @throws Exception
      */
     public function update($entityType, array $properties)
     {
-        $isNew = empty($properties['_id']);
-
-        return $this->{$isNew ? 'doPost' : 'doPut'}(
-            $entityType . '.json/crud/' . ($isNew ? '' : $properties['_id']),
-            [],
-            $properties
-        );
+        if (empty($properties['_id'])) {
+            return $this->doPost($entityType . '.json/crud/', [], $properties);
+        }
+        return $this->doPut($entityType . '.json/crud/' . $properties['_id'], [], $properties);
     }
 
     /**
