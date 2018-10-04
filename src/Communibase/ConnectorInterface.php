@@ -1,4 +1,5 @@
 <?php
+
 namespace Communibase;
 
 use Communibase\Logging\QueryLogger;
@@ -60,6 +61,8 @@ interface ConnectorInterface
      * @param array $params (optional)
      *
      * @return array entities
+     *
+     * @throws Exception
      */
     public function getByIds($entityType, array $ids, array $params = []);
 
@@ -70,6 +73,8 @@ interface ConnectorInterface
      * @param array $params (optional)
      *
      * @return array|null
+     *
+     * @throws Exception
      */
     public function getAll($entityType, array $params = []);
 
@@ -81,6 +86,8 @@ interface ConnectorInterface
      * @param array $params (optional)
      *
      * @return array
+     *
+     * @throws Exception
      */
     public function getIds($entityType, array $selector = [], array $params = []);
 
@@ -91,6 +98,8 @@ interface ConnectorInterface
      * @param array $selector (optional) i.e. ['firstName' => 'Henk']
      *
      * @return array resultData
+     *
+     * @throws Exception
      */
     public function getId($entityType, array $selector = []);
 
@@ -106,7 +115,10 @@ interface ConnectorInterface
      *
      * @param $entityType
      * @param array $pipeline
+     *
      * @return array
+     *
+     * @throws Exception
      */
     public function aggregate($entityType, array $pipeline);
 
@@ -118,7 +130,7 @@ interface ConnectorInterface
      *        [
      *            'updatedBy' => '', // name of the user
      *            'updatedAt' => '', // a string according to the DateTime::ISO8601 format
-     *            '_id' => '', // the ID of the entity which can ge fetched seperately
+     *            '_id' => '', // the ID of the entity which can ge fetched separately
      *        ],
      *        ...
      * ]
@@ -193,7 +205,8 @@ interface ConnectorInterface
      *
      * @param string $id id string for the file-entity
      *
-     * @return StreamInterface Binary contents of the file. Since the stream can be made a string this works like a charm!
+     * @return StreamInterface Binary contents of the file.
+     * Since the stream can be made a string this works like a charm!
      *
      * @throws Exception
      */

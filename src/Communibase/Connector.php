@@ -1,4 +1,5 @@
 <?php
+
 namespace Communibase;
 
 use Communibase\Logging\QueryLogger;
@@ -246,6 +247,8 @@ class Connector implements ConnectorInterface
      * @param array $selector (optional) i.e. ['firstName' => 'Henk']
      *
      * @return array resultData
+     *
+     * @throws Exception
      */
     public function getId($entityType, array $selector = [])
     {
@@ -284,7 +287,7 @@ class Connector implements ConnectorInterface
      *        [
      *            'updatedBy' => '', // name of the user
      *            'updatedAt' => '', // a string according to the DateTime::ISO8601 format
-     *            '_id' => '', // the ID of the entity which can ge fetched seperately
+     *            '_id' => '', // the ID of the entity which can ge fetched separately
      *        ],
      *        ...
      * ]
@@ -326,19 +329,16 @@ class Connector implements ConnectorInterface
      * @param string $entityType
      * @param array $properties - the to-be-saved entity data
      *
-     * @returns array resultData
+     * @return array resultData
      *
      * @throws Exception
      */
     public function update($entityType, array $properties)
     {
-        $isNew = empty($properties['_id']);
-
-        return $this->{$isNew ? 'doPost' : 'doPut'}(
-            $entityType . '.json/crud/' . ($isNew ? '' : $properties['_id']),
-            [],
-            $properties
-        );
+        if (empty($properties['_id'])) {
+            return $this->doPost($entityType . '.json/crud/', [], $properties);
+        }
+        return $this->doPut($entityType . '.json/crud/' . $properties['_id'], [], $properties);
     }
 
     /**
@@ -386,7 +386,8 @@ class Connector implements ConnectorInterface
      *
      * @param string $id id string for the file-entity
      *
-     * @return StreamInterface Binary contents of the file. Since the stream can be made a string this works like a charm!
+     * @return StreamInterface Binary contents of the file.
+     * Since the stream can be made a string this works like a charm!
      *
      * @throws Exception
      */
@@ -570,6 +571,7 @@ class Connector implements ConnectorInterface
             }
 
             $modifier = 1;
+            /** @noinspection SubStrUsedAsArrayAccessInspection */
             $firstChar = substr($field, 0, 1);
             if ($firstChar === '+' || $firstChar === '-') {
                 $modifier = $firstChar === '+' ? 1 : 0;
@@ -742,8 +744,8 @@ class Connector implements ConnectorInterface
         try {
 
             /**
-             * Due to GuzzleHttp not passing a default host header given to the client to _every_ request made by the client
-             * we manually check to see if we need to add a hostheader to requests.
+             * Due to GuzzleHttp not passing a default host header given to the client to _every_ request made by the
+             * client we manually check to see if we need to add a hostheader to requests.
              * When the issue is resolved the foreach can be removed (as the function might even?)
              *
              * @see https://github.com/guzzle/guzzle/issues/1297
@@ -767,7 +769,8 @@ class Connector implements ConnectorInterface
             // try to catch the Guzzle client exception (404's, validation errors etc) and wrap them into a CB exception
         } catch (ClientException $e) {
 
-            $response = json_decode($e->getResponse()->getBody(), true);
+            $response = $e->getResponse();
+            $response = json_decode($response === null ? '' : $response->getBody(), true);
 
             throw new Exception(
                 $response['message'],
