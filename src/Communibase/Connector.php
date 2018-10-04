@@ -246,6 +246,8 @@ class Connector implements ConnectorInterface
      * @param array $selector (optional) i.e. ['firstName' => 'Henk']
      *
      * @return array resultData
+     *
+     * @throws Exception
      */
     public function getId($entityType, array $selector = [])
     {
