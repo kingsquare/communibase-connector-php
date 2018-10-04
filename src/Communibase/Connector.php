@@ -287,7 +287,7 @@ class Connector implements ConnectorInterface
      *        [
      *            'updatedBy' => '', // name of the user
      *            'updatedAt' => '', // a string according to the DateTime::ISO8601 format
-     *            '_id' => '', // the ID of the entity which can ge fetched seperately
+     *            '_id' => '', // the ID of the entity which can ge fetched separately
      *        ],
      *        ...
      * ]
@@ -571,6 +571,7 @@ class Connector implements ConnectorInterface
             }
 
             $modifier = 1;
+            /** @noinspection SubStrUsedAsArrayAccessInspection */
             $firstChar = substr($field, 0, 1);
             if ($firstChar === '+' || $firstChar === '-') {
                 $modifier = $firstChar === '+' ? 1 : 0;
