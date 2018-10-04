@@ -130,7 +130,7 @@ interface ConnectorInterface
      *        [
      *            'updatedBy' => '', // name of the user
      *            'updatedAt' => '', // a string according to the DateTime::ISO8601 format
-     *            '_id' => '', // the ID of the entity which can ge fetched seperately
+     *            '_id' => '', // the ID of the entity which can ge fetched separately
      *        ],
      *        ...
      * ]
@@ -205,7 +205,8 @@ interface ConnectorInterface
      *
      * @param string $id id string for the file-entity
      *
-     * @return StreamInterface Binary contents of the file. Since the stream can be made a string this works like a charm!
+     * @return StreamInterface Binary contents of the file.
+     * Since the stream can be made a string this works like a charm!
      *
      * @throws Exception
      */

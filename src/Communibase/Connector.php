@@ -388,7 +388,8 @@ class Connector implements ConnectorInterface
      *
      * @param string $id id string for the file-entity
      *
-     * @return StreamInterface Binary contents of the file. Since the stream can be made a string this works like a charm!
+     * @return StreamInterface Binary contents of the file.
+     * Since the stream can be made a string this works like a charm!
      *
      * @throws Exception
      */
@@ -744,8 +745,8 @@ class Connector implements ConnectorInterface
         try {
 
             /**
-             * Due to GuzzleHttp not passing a default host header given to the client to _every_ request made by the client
-             * we manually check to see if we need to add a hostheader to requests.
+             * Due to GuzzleHttp not passing a default host header given to the client to _every_ request made by the
+             * client we manually check to see if we need to add a hostheader to requests.
              * When the issue is resolved the foreach can be removed (as the function might even?)
              *
              * @see https://github.com/guzzle/guzzle/issues/1297
