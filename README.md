@@ -13,13 +13,9 @@ the node.js-version, available at [Github](https://github.com/kingsquare/communi
 Usage
 =====
 
-The easiest way to install the connector is to use [Composer](https://getcomposer.org/) and add the following to your project's composer.json file:
-```json
-{
-  "require": {
-    "kingsquare/communibase-connector-php": "~1"
-  }
-}
+The easiest way to install the connector is to use [Composer](https://getcomposer.org/):
+```
+composer require kingsquare/communibase-connector-php
 ```
 Now you should be able to install the package by updating your composer environment ```composer install```   
 The connector is available and usable as follows:
