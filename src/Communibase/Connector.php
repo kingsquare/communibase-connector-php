@@ -532,7 +532,7 @@ class Connector implements ConnectorInterface
         $options = [
             'query' => $this->preParseParams($params),
         ];
-        if (count($data)) {
+        if (is_array($data) && count($data) > 0) {
             $options['json'] = $data;
         }
 
