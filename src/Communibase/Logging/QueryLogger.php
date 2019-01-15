@@ -1,4 +1,5 @@
 <?php
+
 namespace Communibase\Logging;
 
 /**

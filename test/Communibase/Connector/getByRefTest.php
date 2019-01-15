@@ -1,4 +1,5 @@
 <?php
+
 namespace Communibase;
 
 /**
@@ -129,18 +130,18 @@ class GetByRefTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @return \Communibase\Connector
+     * @return \PHPUnit_Framework_MockObject_MockObject
      */
-    protected function getMockConnector() {
+    protected function getMockConnector()
+    {
 
-        $mock = $this->getMockBuilder('Communibase\Connector')
+        $mock = $this->getMockBuilder(Connector::class)
             ->setMethods(['getById'])
             ->disableOriginalConstructor()
             ->getMock();
 
-        $mock->expects($this->any())
-            ->method('getById')
-            ->will($this->returnValue([
+        $mock->method('getById')
+            ->willReturn([
                 '_id' => '1234',
                 'singlePathToAttribute' => 'value',
                 'multiplePathToAttribute' => [
@@ -172,7 +173,7 @@ class GetByRefTest extends \PHPUnit_Framework_TestCase
                         ]
                     ]
                 ],
-            ]));
+            ]);
 
         return $mock;
     }

@@ -10,6 +10,7 @@
 		{ "name": "Aubrey Hewes", "email": "aubrey@kingsquare.nl" }
 	],
 	"require": {
+		"ext-json":"*",
 		"php": ">=5.5",
 		"guzzlehttp/guzzle": "~6.0"
 	},
@@ -17,7 +18,7 @@
 		"phpunit/phpunit": "~4"
 	},
 	"autoload": {
-		"psr-0": {
+		"psr-4": {
 			"Communibase": "src/"
 		}
 	}

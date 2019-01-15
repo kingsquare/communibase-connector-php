@@ -1,4 +1,5 @@
 <?php
+
 namespace Communibase;
 
 use GuzzleHttp\Client;
@@ -27,7 +28,7 @@ class ConnectorTest extends \PHPUnit_Framework_TestCase
     public function constructorWithClient()
     {
         $connector = new Connector('test', '', $this->getHttpClient());
-        $this->assertInstanceOf('\Communibase\Connector', $connector);
+        $this->assertInstanceOf(Connector::class, $connector);
     }
 
     /**
@@ -46,12 +47,12 @@ class ConnectorTest extends \PHPUnit_Framework_TestCase
     public function listOfIds()
     {
         return [
-                ['507f1f77bcf86cd799439011', true],
-                ['507f191e810c19729de860ea', true],
-                ['54b7ed2b49726734cab0570c', true],
-                ['123c', false],
-                ['t', false],
-                ['t', false],
+            ['507f1f77bcf86cd799439011', true],
+            ['507f191e810c19729de860ea', true],
+            ['54b7ed2b49726734cab0570c', true],
+            ['123c', false],
+            ['t', false],
+            ['t', false],
         ];
     }
 

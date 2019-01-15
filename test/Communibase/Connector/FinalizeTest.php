@@ -1,4 +1,5 @@
 <?php
+
 namespace Communibase;
 
 /**
@@ -15,10 +16,10 @@ class FinalizeTest extends \PHPUnit_Framework_TestCase
      */
     public function testFinalizeCallIsPossibleForInvoiceOnly()
     {
-        $stub = $this->getMockBuilder('Communibase\Connector')
-                ->setMethods(null)
-                ->disableOriginalConstructor()
-                ->getMock();
+        $stub = $this->getMockBuilder(Connector::class)
+            ->setMethods(null)
+            ->disableOriginalConstructor()
+            ->getMock();
 
         // must throw exception
         $stub->finalize('Person', 'id');

@@ -1,4 +1,5 @@
 <?php
+
 namespace Communibase\Logging;
 
 /**
@@ -35,15 +36,16 @@ class DebugStack implements QueryLogger
      */
     public function startQuery($query, array $params = null, array $data = null)
     {
-        if ($this->enabled) {
-            $this->start = microtime(true);
-            $this->queries[++$this->currentQuery] = [
-                    'query' => $query,
-                    'params' => $params,
-                    'data' => $data,
-                    'executionMS' => 0
-            ];
+        if (!$this->enabled) {
+            return;
         }
+        $this->start = microtime(true);
+        $this->queries[++$this->currentQuery] = [
+            'query' => $query,
+            'params' => $params,
+            'data' => $data,
+            'executionMS' => 0
+        ];
     }
 
     /**
@@ -51,8 +53,9 @@ class DebugStack implements QueryLogger
      */
     public function stopQuery()
     {
-        if ($this->enabled) {
-            $this->queries[$this->currentQuery]['executionMS'] = microtime(true) - $this->start;
+        if (!$this->enabled) {
+            return;
         }
+        $this->queries[$this->currentQuery]['executionMS'] = microtime(true) - $this->start;
     }
 }
