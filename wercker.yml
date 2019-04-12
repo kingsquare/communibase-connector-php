@@ -1,7 +1,13 @@
-box: wercker/php
+box: gekkie/wercker-docker-php:5.6
 build:
-    steps:
-      - leipert/composer-install@0.0.1
-      - script:
-          name: run unit tests
-          code: phpunit
+  steps:
+    - script:
+        name: download the depencies
+        code: |
+          composer self-update
+          composer config --global cache-dir $WERCKER_CACHE_DIR/composer
+          composer install
+
+    - script:
+        name: PHPUnit integration tests
+        code: phpunit
