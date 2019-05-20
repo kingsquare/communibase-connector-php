@@ -44,7 +44,7 @@ class ConnectorTest extends \PHPUnit_Framework_TestCase
     /**
      * @return array
      */
-    public function listOfIds()
+    public function isIdProvider()
     {
         return [
             ['507f1f77bcf86cd799439011', true],
@@ -53,11 +53,12 @@ class ConnectorTest extends \PHPUnit_Framework_TestCase
             ['123c', false],
             ['t', false],
             ['t', false],
+            ['58a2d90012f9ae00c647d0fc((\'.,.', false],
         ];
     }
 
     /**
-     * @dataProvider listOfIds
+     * @dataProvider isIdProvider
      * @test
      * @param $id
      * @param $isValid

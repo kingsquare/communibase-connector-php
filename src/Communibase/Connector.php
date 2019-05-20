@@ -639,7 +639,7 @@ class Connector implements ConnectorInterface
             return false;
         }
 
-        if (preg_match('#[0-9a-fA-F]{24}#', $id) === 0) {
+        if (preg_match('#^[0-9a-fA-F]{24}$#', $id) === 0) {
             return false;
         }
 
