@@ -137,6 +137,10 @@ class Connector implements ConnectorInterface
      */
     public function getByRef(array $ref, array $parentEntity = [])
     {
+        if (empty($ref['rootDocumentEntityType']) && empty($ref['path'])) {
+            throw new \InvalidArgumentException('Missing rootDocumentEntityType / path keys in $ref');
+        }
+
         $document = $parentEntity;
         if (strpos($ref['rootDocumentEntityType'], 'parent') === false) {
             if (empty($document['_id']) || $document['_id'] !== $ref['rootDocumentId']) {
@@ -187,7 +191,7 @@ class Connector implements ConnectorInterface
     {
         $validIds = array_values(array_unique(array_filter($ids, [__CLASS__, 'isIdValid'])));
 
-        if (count($validIds) === 0) {
+        if ($entityType === '' || count($validIds) === 0) {
             return [];
         }
 
@@ -526,6 +530,10 @@ class Connector implements ConnectorInterface
      */
     protected function getResult($method, $path, array $params = null, array $data = null)
     {
+        if (strpos($path, '.json') === 0) {
+            throw new \InvalidArgumentException('Missing entitytype in request');
+        }
+
         if ($params === null) {
             $params = [];
         }
