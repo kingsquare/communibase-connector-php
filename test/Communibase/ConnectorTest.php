@@ -38,19 +38,18 @@ class ConnectorTest extends \PHPUnit_Framework_TestCase
     public function getBinary()
     {
         $connector = new Connector('test', '');
-        /** @noinspection UnusedFunctionResultInspection */
         $connector->getBinary('');
     }
 
     /**
      * @test
-     * @throws \Communibase\Exception
+     * @throws Exception
      */
     public function getByRefNeedsCorrectKeysInRef()
     {
         $connector = new Connector('test', '');
         $this->setExpectedException(\InvalidArgumentException::class);
-        $document = $connector->getByRef([], []);
+        $connector->getByRef([]);
     }
 
     /**
@@ -82,7 +81,7 @@ class ConnectorTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @test
-     * @throws \Communibase\Exception
+     * @throws Exception
      */
     public function getByIdsWithEmptyArrayReturnsArray() {
         $connector = new Connector('test', '');

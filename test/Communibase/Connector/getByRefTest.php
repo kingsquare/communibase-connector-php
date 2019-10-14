@@ -9,9 +9,7 @@ namespace Communibase;
  */
 class GetByRefTest extends \PHPUnit_Framework_TestCase
 {
-
     /**
-     *
      * @expectedException Exception
      * @expectedExceptionMessage Please provide a documentReference object with a type and id
      */
@@ -22,10 +20,10 @@ class GetByRefTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @test
+     * @throws Exception
      */
     public function singlePathToAttribute()
     {
-
         $result = $this->getMockConnector()->getByRef([
             'rootDocumentEntityType' => 'Test',
             'rootDocumentId' => 'X',
@@ -41,10 +39,10 @@ class GetByRefTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @test
+     * @throws Exception
      */
     public function multiplePathToAttribute()
     {
-
         $result = $this->getMockConnector()->getByRef([
             'rootDocumentEntityType' => 'Test',
             'rootDocumentId' => 'X',
@@ -63,10 +61,10 @@ class GetByRefTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @test
+     * @throws Exception
      */
     public function multiplePathToAttributeDepth()
     {
-
         $result = $this->getMockConnector()->getByRef([
             'rootDocumentEntityType' => 'Test',
             'rootDocumentId' => 'X',
@@ -88,10 +86,10 @@ class GetByRefTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @test
+     * @throws Exception
      */
     public function singlePathToArrayObject()
     {
-
         $result = $this->getMockConnector()->getByRef([
             'rootDocumentEntityType' => 'Test',
             'rootDocumentId' => 'X',
@@ -108,10 +106,10 @@ class GetByRefTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @test
+     * @throws Exception
      */
     public function multiplePathToArrayObject()
     {
-
         $result = $this->getMockConnector()->getByRef([
             'rootDocumentEntityType' => 'Test',
             'rootDocumentId' => 'X',
@@ -130,11 +128,10 @@ class GetByRefTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @return \PHPUnit_Framework_MockObject_MockObject
+     * @return \PHPUnit_Framework_MockObject_MockObject|Connector
      */
     protected function getMockConnector()
     {
-
         $mock = $this->getMockBuilder(Connector::class)
             ->setMethods(['getById'])
             ->disableOriginalConstructor()
@@ -177,5 +174,4 @@ class GetByRefTest extends \PHPUnit_Framework_TestCase
 
         return $mock;
     }
-
 }
