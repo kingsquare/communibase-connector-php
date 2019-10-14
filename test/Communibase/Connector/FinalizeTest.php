@@ -10,18 +10,36 @@ namespace Communibase;
 class FinalizeTest extends \PHPUnit_Framework_TestCase
 {
     /**
-     * @TODO Test schould also check the reversed.
-     * @expectedException Exception
-     * @expectedExceptionMessage Cannot call finalize on Person
+     * @return array
      */
-    public function testFinalizeCallIsPossibleForInvoiceOnly()
+    public function provider()
     {
+        return [
+            ['Person', true],
+            ['Invoice', false],
+        ];
+    }
+
+    /**
+     * @dataProvider provider
+     *
+     * @param string $entityType
+     * @param string $expectException
+     *
+     * @throws Exception
+     */
+    public function testFinalizeCallIsPossibleForInvoiceOnly($entityType, $expectException)
+    {
+        /** @var Connector $stub */
         $stub = $this->getMockBuilder(Connector::class)
-            ->setMethods(null)
+            ->setMethods(['doPost'])
             ->disableOriginalConstructor()
             ->getMock();
 
-        // must throw exception
-        $stub->finalize('Person', 'id');
+        if ($expectException) {
+            $this->setExpectedException(Exception::class, 'Cannot call finalize on Person');
+        }
+
+        $stub->finalize($entityType, 'id');
     }
 }
