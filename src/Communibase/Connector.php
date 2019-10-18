@@ -144,7 +144,7 @@ class Connector implements ConnectorInterface
         $document = $parentEntity;
         if (strpos($ref['rootDocumentEntityType'], 'parent') === false) {
             if (empty($document['_id']) || $document['_id'] !== $ref['rootDocumentId']) {
-                $document = $this->getById($ref['rootDocumentEntityType'], $ref['rootDocumentId']);
+                $document = $this->getById($ref['rootDocumentEntityType'], $ref['rootDocumentId'], ['fields' => array_column($ref['path'], 'field')]);
             }
 
             if (count($document) === 0) {
